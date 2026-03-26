@@ -3,7 +3,13 @@ import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Wrench } from 'lucide-react-native';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setStepData } from '../../../store/slices/attendanceSlice';
-import { AppButton, AppCheckbox, AppInput, AppCard } from '../../../components';
+import {
+  AppButton,
+  AppCheckbox,
+  AppInput,
+  AppCard,
+  BottomSheetAlert,
+} from '../../../components';
 import { Colors, Typography, Spacing } from '../../../theme';
 
 interface StepEquipmentCheckProps {
@@ -24,7 +30,7 @@ const StepEquipmentCheck: React.FC<StepEquipmentCheckProps> = ({
   onPrev,
 }) => {
   const dispatch = useAppDispatch();
-  const stepData = useAppSelector((state) => state.attendance.stepData[3]);
+  const stepData = useAppSelector(state => state.attendance.stepData[3]);
 
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(
     (stepData?.checkedItems as Record<string, boolean>) ?? {},
@@ -33,18 +39,21 @@ const StepEquipmentCheck: React.FC<StepEquipmentCheckProps> = ({
     (stepData?.equipmentNotes as string) ?? '',
   );
 
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationMessage, setValidationMessage] = useState('');
+
   const toggleItem = useCallback((id: string, checked: boolean) => {
-    setCheckedItems((prev) => ({ ...prev, [id]: checked }));
+    setCheckedItems(prev => ({ ...prev, [id]: checked }));
   }, []);
 
-  const allChecked = EQUIPMENT_ITEMS.every((item) => checkedItems[item.id]);
+  const allChecked = EQUIPMENT_ITEMS.every(item => checkedItems[item.id]);
 
   const handleNext = useCallback(() => {
     if (!allChecked) {
-      Alert.alert(
-        'Validation',
+      setValidationMessage(
         'All equipment checks must be completed before proceeding.',
       );
+      setShowValidationAlert(true);
       return;
     }
 
@@ -59,13 +68,25 @@ const StepEquipmentCheck: React.FC<StepEquipmentCheckProps> = ({
       }),
     );
     onNext();
-  }, [allChecked, checkedItems, equipmentNotes, dispatch, onNext]);
+  }, [
+    allChecked,
+    checkedItems,
+    equipmentNotes,
+    dispatch,
+    onNext,
+    setShowValidationAlert,
+    setValidationMessage,
+  ]);
+  const handleValidationClose = useCallback(() => {
+    setShowValidationAlert(false);
+  }, []);
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Equipment Check</Text>
       <Text style={styles.subtitle}>
         Verify all equipment and tools are ready.
@@ -77,12 +98,12 @@ const StepEquipmentCheck: React.FC<StepEquipmentCheckProps> = ({
           <Text style={styles.cardTitle}>Equipment Checklist</Text>
         </View>
         <View style={styles.checklist}>
-          {EQUIPMENT_ITEMS.map((item) => (
+          {EQUIPMENT_ITEMS.map(item => (
             <AppCheckbox
               key={item.id}
               label={item.label}
               checked={checkedItems[item.id] ?? false}
-              onChange={(checked) => toggleItem(item.id, checked)}
+              onChange={checked => toggleItem(item.id, checked)}
             />
           ))}
         </View>
@@ -104,12 +125,16 @@ const StepEquipmentCheck: React.FC<StepEquipmentCheckProps> = ({
           variant="outline"
           style={styles.actionBtn}
         />
-        <AppButton
-          title="Next"
-          onPress={handleNext}
-          style={styles.actionBtn}
-        />
+        <AppButton title="Next" onPress={handleNext} style={styles.actionBtn} />
       </View>
+      <BottomSheetAlert
+        visible={showValidationAlert}
+        type="warning"
+        title="Validation Error"
+        message={validationMessage}
+        primaryLabel="OK"
+        onClose={handleValidationClose}
+      />
     </ScrollView>
   );
 };

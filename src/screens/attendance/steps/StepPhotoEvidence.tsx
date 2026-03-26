@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import {
   addPhoto,
   removePhoto,
 } from '../../../store/slices/attendanceSlice';
-import { AppButton, AppCard } from '../../../components';
+import { AppButton, AppCard, BottomSheetAlert } from '../../../components';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../theme';
 import { generateId } from '../../../utils';
 import {
@@ -24,6 +24,7 @@ import {
   pickImageFromGallery,
 } from '../../../utils/imagePicker';
 import type { Photo } from '../../../types/models';
+import ConfirmationModal from '../../../components/common/ConfirmationModal';
 
 interface StepPhotoEvidenceProps {
   onNext: () => void;
@@ -36,6 +37,10 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const photos = useAppSelector(state => state.attendance.photos);
+
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationMessage, setValidationMessage] = useState('');
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
 
   // Open camera
   const handleCamera = useCallback(async () => {
@@ -54,8 +59,8 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
         dispatch(addPhoto(newPhoto));
       }
     } catch (error: any) {
-      Alert.alert(
-        'Error',
+      setShowValidationAlert(true);
+      setValidationMessage(
         error?.message || 'Failed to take photo. Please try again.',
       );
     }
@@ -78,35 +83,22 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
         dispatch(addPhoto(newPhoto));
       }
     } catch (error: any) {
-      Alert.alert(
-        'Error',
+      setShowValidationAlert(true);
+      setValidationMessage(
         error?.message || 'Failed to select image. Please try again.',
       );
     }
   }, [dispatch, photos.length]);
 
   // Remove photo with confirmation
-  const handleRemovePhoto = useCallback(
-    (photoId: string) => {
-      Alert.alert(
-        'Remove Photo',
-        'Are you sure you want to remove this photo?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Remove',
-            style: 'destructive',
-            onPress: () => dispatch(removePhoto(photoId)),
-          },
-        ],
-      );
-    },
-    [dispatch],
-  );
+  const handleRemovePhoto = useCallback((photoId: string) => {
+    setShowClearConfirmation(true);
+  }, []);
 
   const handleNext = useCallback(() => {
     if (photos.length === 0) {
-      Alert.alert('Validation', 'At least one photo is required.');
+      setValidationMessage('At least one photo is required.');
+      setShowValidationAlert(true);
       return;
     }
 
@@ -119,7 +111,6 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
     onNext();
   }, [photos.length, dispatch, onNext]);
 
-  // Render a single photo item in the grid
   const renderPhotoItem = ({ item }: { item: Photo }) => (
     <View style={styles.gridItem}>
       <Image source={{ uri: item.uri }} style={styles.thumbnail} />
@@ -132,6 +123,14 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
       </TouchableOpacity>
     </View>
   );
+  const handleValidationClose = useCallback(() => {
+    setShowValidationAlert(false);
+  }, []);
+
+  const handleClearConfirm = useCallback(() => {
+    dispatch(removePhoto(photos[0].id));
+    setShowClearConfirmation(false);
+  }, [photos, dispatch]);
 
   return (
     <ScrollView
@@ -189,6 +188,26 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
         />
         <AppButton title="Next" onPress={handleNext} style={styles.actionBtn} />
       </View>
+
+      <BottomSheetAlert
+        visible={showValidationAlert}
+        type="warning"
+        title="Validation Error"
+        message={validationMessage}
+        primaryLabel="OK"
+        onClose={handleValidationClose}
+      />
+      <ConfirmationModal
+        visible={showClearConfirmation}
+        onClose={() => setShowClearConfirmation(false)}
+        onConfirm={handleClearConfirm}
+        title="Clear Photo"
+        message="Are you sure you want to clear this photo? This action cannot be undone."
+        confirmText="Clear"
+        cancelText="Cancel"
+        type="warning"
+        showDetails={false}
+      />
     </ScrollView>
   );
 };

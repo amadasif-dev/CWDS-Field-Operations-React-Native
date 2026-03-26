@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setStepData } from '../../../store/slices/attendanceSlice';
-import { AppButton, AppInput } from '../../../components';
+import { AppButton, AppInput, BottomSheetAlert } from '../../../components';
 import { Colors, Typography, Spacing } from '../../../theme';
 
 interface StepWorkDocumentationProps {
@@ -15,7 +15,7 @@ const StepWorkDocumentation: React.FC<StepWorkDocumentationProps> = ({
   onPrev,
 }) => {
   const dispatch = useAppDispatch();
-  const stepData = useAppSelector((state) => state.attendance.stepData[5]);
+  const stepData = useAppSelector(state => state.attendance.stepData[5]);
 
   const [workDescription, setWorkDescription] = useState(
     (stepData?.workDescription as string) ?? '',
@@ -30,9 +30,13 @@ const StepWorkDocumentation: React.FC<StepWorkDocumentationProps> = ({
     (stepData?.recommendations as string) ?? '',
   );
 
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationMessage, setValidationMessage] = useState('');
+
   const handleNext = useCallback(() => {
     if (!workDescription.trim()) {
-      Alert.alert('Validation', 'Work description is required.');
+      setValidationMessage('Work description is required.');
+      setShowValidationAlert(true);
       return;
     }
 
@@ -48,13 +52,25 @@ const StepWorkDocumentation: React.FC<StepWorkDocumentationProps> = ({
       }),
     );
     onNext();
-  }, [workDescription, materialsUsed, issuesFound, recommendations, dispatch, onNext]);
+  }, [
+    workDescription,
+    materialsUsed,
+    issuesFound,
+    recommendations,
+    dispatch,
+    onNext,
+  ]);
+
+  const handleValidationClose = useCallback(() => {
+    setShowValidationAlert(false);
+  }, []);
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Work Documentation</Text>
       <Text style={styles.subtitle}>
         Document the work performed during this job.
@@ -104,12 +120,17 @@ const StepWorkDocumentation: React.FC<StepWorkDocumentationProps> = ({
           variant="outline"
           style={styles.actionBtn}
         />
-        <AppButton
-          title="Next"
-          onPress={handleNext}
-          style={styles.actionBtn}
-        />
+        <AppButton title="Next" onPress={handleNext} style={styles.actionBtn} />
       </View>
+
+      <BottomSheetAlert
+        visible={showValidationAlert}
+        type="warning"
+        title="Validation Error"
+        message={validationMessage}
+        primaryLabel="OK"
+        onClose={handleValidationClose}
+      />
     </ScrollView>
   );
 };

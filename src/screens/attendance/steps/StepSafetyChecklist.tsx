@@ -3,7 +3,12 @@ import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { ShieldCheck } from 'lucide-react-native';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setStepData } from '../../../store/slices/attendanceSlice';
-import { AppButton, AppCheckbox, AppCard } from '../../../components';
+import {
+  AppButton,
+  AppCheckbox,
+  AppCard,
+  BottomSheetAlert,
+} from '../../../components';
 import { Colors, Typography, Spacing } from '../../../theme';
 
 interface StepSafetyChecklistProps {
@@ -26,24 +31,27 @@ const StepSafetyChecklist: React.FC<StepSafetyChecklistProps> = ({
   onPrev,
 }) => {
   const dispatch = useAppDispatch();
-  const stepData = useAppSelector((state) => state.attendance.stepData[4]);
+  const stepData = useAppSelector(state => state.attendance.stepData[4]);
 
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(
     (stepData?.checkedItems as Record<string, boolean>) ?? {},
   );
 
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationMessage, setValidationMessage] = useState('');
+
   const toggleItem = useCallback((id: string, checked: boolean) => {
-    setCheckedItems((prev) => ({ ...prev, [id]: checked }));
+    setCheckedItems(prev => ({ ...prev, [id]: checked }));
   }, []);
 
-  const allChecked = SAFETY_ITEMS.every((item) => checkedItems[item.id]);
+  const allChecked = SAFETY_ITEMS.every(item => checkedItems[item.id]);
 
   const handleNext = useCallback(() => {
     if (!allChecked) {
-      Alert.alert(
-        'Validation',
+      setValidationMessage(
         'All safety checks must be completed before proceeding.',
       );
+      setShowValidationAlert(true);
       return;
     }
 
@@ -57,17 +65,29 @@ const StepSafetyChecklist: React.FC<StepSafetyChecklistProps> = ({
       }),
     );
     onNext();
-  }, [allChecked, checkedItems, dispatch, onNext]);
+  }, [
+    allChecked,
+    checkedItems,
+    dispatch,
+    onNext,
+    setShowValidationAlert,
+    setValidationMessage,
+  ]);
 
   const checkedCount = SAFETY_ITEMS.filter(
-    (item) => checkedItems[item.id],
+    item => checkedItems[item.id],
   ).length;
+
+  const handleValidationClose = useCallback(() => {
+    setShowValidationAlert(false);
+  }, []);
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Safety Checklist</Text>
       <Text style={styles.subtitle}>
         Complete all safety requirements before starting work.
@@ -95,12 +115,12 @@ const StepSafetyChecklist: React.FC<StepSafetyChecklistProps> = ({
           <Text style={styles.cardTitle}>Safety Requirements</Text>
         </View>
         <View style={styles.checklist}>
-          {SAFETY_ITEMS.map((item) => (
+          {SAFETY_ITEMS.map(item => (
             <AppCheckbox
               key={item.id}
               label={item.label}
               checked={checkedItems[item.id] ?? false}
-              onChange={(checked) => toggleItem(item.id, checked)}
+              onChange={checked => toggleItem(item.id, checked)}
             />
           ))}
         </View>
@@ -113,12 +133,17 @@ const StepSafetyChecklist: React.FC<StepSafetyChecklistProps> = ({
           variant="outline"
           style={styles.actionBtn}
         />
-        <AppButton
-          title="Next"
-          onPress={handleNext}
-          style={styles.actionBtn}
-        />
+        <AppButton title="Next" onPress={handleNext} style={styles.actionBtn} />
       </View>
+
+      <BottomSheetAlert
+        visible={showValidationAlert}
+        type="warning"
+        title="Validation Error"
+        message={validationMessage}
+        primaryLabel="OK"
+        onClose={handleValidationClose}
+      />
     </ScrollView>
   );
 };

@@ -2,7 +2,12 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setStepData } from '../../../store/slices/attendanceSlice';
-import { AppButton, AppInput, AppCard } from '../../../components';
+import {
+  AppButton,
+  AppInput,
+  AppCard,
+  BottomSheetAlert,
+} from '../../../components';
 import { Colors, Typography, Spacing } from '../../../theme';
 
 interface StepSiteAssessmentProps {
@@ -17,7 +22,7 @@ const StepSiteAssessment: React.FC<StepSiteAssessmentProps> = ({
   onPrev,
 }) => {
   const dispatch = useAppDispatch();
-  const stepData = useAppSelector((state) => state.attendance.stepData[2]);
+  const stepData = useAppSelector(state => state.attendance.stepData[2]);
 
   const [siteCondition, setSiteCondition] = useState(
     (stepData?.siteCondition as string) ?? '',
@@ -25,17 +30,19 @@ const StepSiteAssessment: React.FC<StepSiteAssessmentProps> = ({
   const [accessNotes, setAccessNotes] = useState(
     (stepData?.accessNotes as string) ?? '',
   );
-  const [hazards, setHazards] = useState(
-    (stepData?.hazards as string) ?? '',
-  );
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationMessage, setValidationMessage] = useState('');
+  const [hazards, setHazards] = useState((stepData?.hazards as string) ?? '');
 
   const handleNext = useCallback(() => {
     if (!siteCondition) {
-      Alert.alert('Validation', 'Please select a site condition.');
+      setValidationMessage('Please select a site condition.');
+      setShowValidationAlert(true);
       return;
     }
     if (!accessNotes.trim()) {
-      Alert.alert('Validation', 'Please provide access notes.');
+      setValidationMessage('Please provide access notes.');
+      setShowValidationAlert(true);
       return;
     }
 
@@ -46,19 +53,31 @@ const StepSiteAssessment: React.FC<StepSiteAssessmentProps> = ({
       }),
     );
     onNext();
-  }, [siteCondition, accessNotes, hazards, dispatch, onNext]);
+  }, [
+    siteCondition,
+    accessNotes,
+    hazards,
+    dispatch,
+    onNext,
+    setShowValidationAlert,
+    setValidationMessage,
+  ]);
 
+  const handleValidationClose = useCallback(() => {
+    setShowValidationAlert(false);
+  }, []);
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Site Assessment</Text>
       <Text style={styles.subtitle}>Assess the current site conditions.</Text>
 
       <Text style={styles.label}>Site Condition *</Text>
       <View style={styles.optionsRow}>
-        {CONDITION_OPTIONS.map((option) => (
+        {CONDITION_OPTIONS.map(option => (
           <AppCard
             key={option}
             onPress={() => setSiteCondition(option)}
@@ -68,12 +87,14 @@ const StepSiteAssessment: React.FC<StepSiteAssessmentProps> = ({
               siteCondition === option
                 ? [styles.optionCard, styles.optionActive]
                 : styles.optionCard
-            }>
+            }
+          >
             <Text
               style={[
                 styles.optionText,
                 siteCondition === option && styles.optionTextActive,
-              ]}>
+              ]}
+            >
               {option}
             </Text>
           </AppCard>
@@ -106,12 +127,16 @@ const StepSiteAssessment: React.FC<StepSiteAssessmentProps> = ({
           variant="outline"
           style={styles.actionBtn}
         />
-        <AppButton
-          title="Next"
-          onPress={handleNext}
-          style={styles.actionBtn}
-        />
+        <AppButton title="Next" onPress={handleNext} style={styles.actionBtn} />
       </View>
+      <BottomSheetAlert
+        visible={showValidationAlert}
+        type="warning"
+        title="Validation Error"
+        message={validationMessage}
+        primaryLabel="OK"
+        onClose={handleValidationClose}
+      />
     </ScrollView>
   );
 };

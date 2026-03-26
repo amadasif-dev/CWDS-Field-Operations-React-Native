@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import {
   CheckCircle,
   MapPin,
@@ -11,8 +11,13 @@ import {
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { submitAttendance, clearAttendance } from '../../../store/slices/attendanceSlice';
+import {
+  submitAttendance,
+  clearAttendance,
+} from '../../../store/slices/attendanceSlice';
 import { AppButton, AppCard } from '../../../components';
+import ConfirmationModal from '../../../components/common/ConfirmationModal';
+import BottomSheetAlert from '../../../components/common/BottomSheetAlert';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../theme';
 
 interface StepSummaryProps {
@@ -24,37 +29,13 @@ const StepSummary: React.FC<StepSummaryProps> = ({ jobId, onPrev }) => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
   const { stepData, photos, signature, isSubmitting } = useAppSelector(
-    (state) => state.attendance,
+    state => state.attendance,
   );
 
-  const handleSubmit = useCallback(() => {
-    Alert.alert(
-      'Submit Report',
-      'Are you sure you want to submit this attendance report? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Submit',
-          onPress: async () => {
-            try {
-              await dispatch(submitAttendance(jobId)).unwrap();
-              Alert.alert('Success', 'Attendance report submitted successfully.', [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    dispatch(clearAttendance());
-                    navigation.goBack();
-                  },
-                },
-              ]);
-            } catch {
-              Alert.alert('Error', 'Failed to submit report. Please try again.');
-            }
-          },
-        },
-      ],
-    );
-  }, [dispatch, navigation, jobId]);
+  const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const summaryItems = [
     {
@@ -92,7 +73,9 @@ const StepSummary: React.FC<StepSummaryProps> = ({ jobId, onPrev }) => {
     {
       icon: <Camera size={18} color={Colors.accent} />,
       title: 'Photo Evidence',
-      status: `${photos.length} photo${photos.length !== 1 ? 's' : ''} captured`,
+      status: `${photos.length} photo${
+        photos.length !== 1 ? 's' : ''
+      } captured`,
       complete: photos.length > 0,
     },
     {
@@ -103,76 +86,147 @@ const StepSummary: React.FC<StepSummaryProps> = ({ jobId, onPrev }) => {
     },
   ];
 
-  const allComplete = summaryItems.every((item) => item.complete);
+  const allComplete = summaryItems.every(item => item.complete);
+
+  const handleSubmitConfirm = useCallback(async () => {
+    setShowSubmitConfirmation(false);
+    try {
+      await dispatch(submitAttendance(jobId)).unwrap();
+      // Show success alert
+      setShowSuccessAlert(true);
+    } catch (error: any) {
+      setErrorMessage(
+        error?.message || 'Failed to submit report. Please try again.',
+      );
+      setShowErrorAlert(true);
+    }
+  }, [dispatch, jobId]);
+
+  const handleSuccessClose = useCallback(() => {
+    setShowSuccessAlert(false);
+    dispatch(clearAttendance());
+    navigation.goBack();
+  }, [dispatch, navigation]);
+
+  const handleErrorClose = useCallback(() => {
+    setShowErrorAlert(false);
+    setErrorMessage('');
+  }, []);
+
+  const handleSubmitPress = useCallback(() => {
+    if (!allComplete) {
+      setErrorMessage(
+        'Some steps are incomplete. Please go back and complete all required steps before submitting.',
+      );
+      setShowErrorAlert(true);
+      return;
+    }
+    setShowSubmitConfirmation(true);
+  }, [allComplete]);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>Summary & Submit</Text>
-      <Text style={styles.subtitle}>
-        Review your attendance report before submitting.
-      </Text>
+    <>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>Summary & Submit</Text>
+        <Text style={styles.subtitle}>
+          Review your attendance report before submitting.
+        </Text>
 
-      <View style={styles.summaryList}>
-        {summaryItems.map((item, index) => (
-          <AppCard
-            key={index}
-            variant="outlined"
-            padding="md"
-            style={styles.summaryItem}>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryLeft}>
-                {item.icon}
-                <View style={styles.summaryContent}>
-                  <Text style={styles.summaryTitle}>{item.title}</Text>
-                  <Text
-                    style={[
-                      styles.summaryStatus,
-                      item.complete
-                        ? styles.statusComplete
-                        : styles.statusIncomplete,
-                    ]}>
-                    {item.status}
-                  </Text>
+        <View style={styles.summaryList}>
+          {summaryItems.map((item, index) => (
+            <AppCard
+              key={index}
+              variant="outlined"
+              padding="md"
+              style={styles.summaryItem}
+            >
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryLeft}>
+                  {item.icon}
+                  <View style={styles.summaryContent}>
+                    <Text style={styles.summaryTitle}>{item.title}</Text>
+                    <Text
+                      style={[
+                        styles.summaryStatus,
+                        item.complete
+                          ? styles.statusComplete
+                          : styles.statusIncomplete,
+                      ]}
+                    >
+                      {item.status}
+                    </Text>
+                  </View>
                 </View>
+                <CheckCircle
+                  size={20}
+                  color={item.complete ? Colors.green : Colors.gray300}
+                />
               </View>
-              <CheckCircle
-                size={20}
-                color={item.complete ? Colors.green : Colors.gray300}
-              />
-            </View>
-          </AppCard>
-        ))}
-      </View>
-
-      {!allComplete && (
-        <View style={styles.warning}>
-          <Text style={styles.warningText}>
-            Some steps are incomplete. Please go back and complete all required
-            steps before submitting.
-          </Text>
+            </AppCard>
+          ))}
         </View>
-      )}
 
-      <View style={styles.actions}>
-        <AppButton
-          title="Previous"
-          onPress={onPrev}
-          variant="outline"
-          style={styles.actionBtn}
-        />
-        <AppButton
-          title="Submit Report"
-          onPress={handleSubmit}
-          variant={allComplete ? 'primary' : 'secondary'}
-          disabled={!allComplete || isSubmitting}
-          loading={isSubmitting}
-          style={styles.actionBtn}
-        />
-      </View>
-    </ScrollView>
+        {!allComplete && (
+          <View style={styles.warning}>
+            <Text style={styles.warningText}>
+              Some steps are incomplete. Please go back and complete all
+              required steps before submitting.
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.actions}>
+          <AppButton
+            title="Previous"
+            onPress={onPrev}
+            variant="outline"
+            style={styles.actionBtn}
+          />
+          <AppButton
+            title="Submit Report"
+            onPress={handleSubmitPress}
+            variant={allComplete ? 'primary' : 'secondary'}
+            disabled={!allComplete || isSubmitting}
+            loading={isSubmitting}
+            style={styles.actionBtn}
+          />
+        </View>
+      </ScrollView>
+
+      <ConfirmationModal
+        visible={showSubmitConfirmation}
+        onClose={() => setShowSubmitConfirmation(false)}
+        onConfirm={handleSubmitConfirm}
+        title="Submit Report"
+        message="Are you sure you want to submit this attendance report? This action cannot be undone."
+        confirmText="Submit"
+        cancelText="Cancel"
+        type="warning"
+        showDetails={true}
+      />
+
+      <BottomSheetAlert
+        visible={showSuccessAlert}
+        type="success"
+        title="Success!"
+        message="Attendance report submitted successfully."
+        primaryLabel="OK"
+        onClose={handleSuccessClose}
+      />
+
+      <BottomSheetAlert
+        visible={showErrorAlert}
+        type="error"
+        title="Error"
+        message={errorMessage}
+        primaryLabel="OK"
+        onClose={handleErrorClose}
+      />
+    </>
   );
 };
 

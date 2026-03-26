@@ -3,7 +3,12 @@ import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { MapPin, Clock, CheckCircle } from 'lucide-react-native';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setStepData } from '../../../store/slices/attendanceSlice';
-import { AppButton, AppCheckbox, AppCard } from '../../../components';
+import {
+  AppButton,
+  AppCheckbox,
+  AppCard,
+  BottomSheetAlert,
+} from '../../../components';
 import { Colors, Typography, Spacing } from '../../../theme';
 
 interface StepJobConfirmationProps {
@@ -16,7 +21,7 @@ const StepJobConfirmation: React.FC<StepJobConfirmationProps> = ({
   onNext,
 }) => {
   const dispatch = useAppDispatch();
-  const stepData = useAppSelector((state) => state.attendance.stepData[1]);
+  const stepData = useAppSelector(state => state.attendance.stepData[1]);
 
   const [confirmed, setConfirmed] = useState(
     (stepData?.confirmed as boolean) ?? false,
@@ -24,14 +29,18 @@ const StepJobConfirmation: React.FC<StepJobConfirmationProps> = ({
   const [arrivedOnSite, setArrivedOnSite] = useState(
     (stepData?.arrivedOnSite as boolean) ?? false,
   );
+  const [showValidationAlert, setShowValidationAlert] = useState(false);
+  const [validationMessage, setValidationMessage] = useState('');
 
   const handleNext = useCallback(() => {
     if (!confirmed) {
-      Alert.alert('Validation', 'You must confirm the job details.');
+      setValidationMessage('You must confirm the job details.');
+      setShowValidationAlert(true);
       return;
     }
     if (!arrivedOnSite) {
-      Alert.alert('Validation', 'You must confirm arrival on site.');
+      setValidationMessage('You must confirm arrival on site.');
+      setShowValidationAlert(true);
       return;
     }
 
@@ -46,13 +55,24 @@ const StepJobConfirmation: React.FC<StepJobConfirmationProps> = ({
       }),
     );
     onNext();
-  }, [confirmed, arrivedOnSite, dispatch, onNext]);
-
+  }, [
+    confirmed,
+    arrivedOnSite,
+    dispatch,
+    onNext,
+    setShowValidationAlert,
+    setValidationMessage,
+  ]);
+  
+  const handleValidationClose = useCallback(() => {
+    setShowValidationAlert(false);
+  }, []);
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Job Confirmation</Text>
       <Text style={styles.subtitle}>
         Verify job details and confirm your arrival on site.
@@ -85,6 +105,14 @@ const StepJobConfirmation: React.FC<StepJobConfirmationProps> = ({
       <View style={styles.actions}>
         <AppButton title="Next" onPress={handleNext} fullWidth size="lg" />
       </View>
+      <BottomSheetAlert
+        visible={showValidationAlert}
+        type="warning"
+        title="Validation Error"
+        message={validationMessage}
+        primaryLabel="OK"
+        onClose={handleValidationClose}
+      />
     </ScrollView>
   );
 };
