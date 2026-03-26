@@ -33,8 +33,22 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	
+	<!-- Camera Permission -->
+	<key>NSCameraUsageDescription</key>
+	<string>CWDSField needs camera access to take photos for attendance evidence and field documentation</string>
+	
+	<!-- Photo Library Permission -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CWDSField needs photo library access to select images for attendance evidence and field documentation</string>
+	
+	<!-- Photo Library Additions Permission (for saving photos) -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>CWDSField needs permission to save photos to your library</string>
+	
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>CWDSField needs location access to verify your attendance location</string>
+	
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

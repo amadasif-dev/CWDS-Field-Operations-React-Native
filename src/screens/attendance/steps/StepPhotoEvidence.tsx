@@ -1,11 +1,28 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import React, { useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  Image,
+  FlatList,
+  TouchableOpacity,
+} from 'react-native';
 import { Camera, Trash2, ImagePlus } from 'lucide-react-native';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { setStepData, addPhoto, removePhoto } from '../../../store/slices/attendanceSlice';
+import {
+  setStepData,
+  addPhoto,
+  removePhoto,
+} from '../../../store/slices/attendanceSlice';
 import { AppButton, AppCard } from '../../../components';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../theme';
 import { generateId } from '../../../utils';
+import {
+  pickImageFromCamera,
+  pickImageFromGallery,
+} from '../../../utils/imagePicker';
 import type { Photo } from '../../../types/models';
 
 interface StepPhotoEvidenceProps {
@@ -18,31 +35,71 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
   onPrev,
 }) => {
   const dispatch = useAppDispatch();
-  const photos = useAppSelector((state) => state.attendance.photos);
+  const photos = useAppSelector(state => state.attendance.photos);
 
-  const handleAddPhoto = useCallback(() => {
-    // In production, this would open the camera or image picker
-    // For now, we simulate adding a photo placeholder
-    const newPhoto: Photo = {
-      id: generateId(),
-      uri: `photo_${Date.now()}.jpg`,
-      timestamp: new Date().toISOString(),
-      type: 'during',
-      caption: `Photo ${photos.length + 1}`,
-    };
-    dispatch(addPhoto(newPhoto));
+  // Open camera
+  const handleCamera = useCallback(async () => {
+    try {
+      const result = await pickImageFromCamera();
+      if (result) {
+        const newPhoto: Photo = {
+          id: generateId(),
+          uri: result.uri,
+          timestamp: new Date().toISOString(),
+          type: 'during',
+          caption: result.fileName
+            ? result.fileName.split('.')[0]
+            : `Photo ${photos.length + 1}`,
+        };
+        dispatch(addPhoto(newPhoto));
+      }
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error?.message || 'Failed to take photo. Please try again.',
+      );
+    }
   }, [dispatch, photos.length]);
 
+  // Open gallery
+  const handleGallery = useCallback(async () => {
+    try {
+      const result = await pickImageFromGallery();
+      if (result) {
+        const newPhoto: Photo = {
+          id: generateId(),
+          uri: result.uri,
+          timestamp: new Date().toISOString(),
+          type: 'during',
+          caption: result.fileName
+            ? result.fileName.split('.')[0]
+            : `Photo ${photos.length + 1}`,
+        };
+        dispatch(addPhoto(newPhoto));
+      }
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error?.message || 'Failed to select image. Please try again.',
+      );
+    }
+  }, [dispatch, photos.length]);
+
+  // Remove photo with confirmation
   const handleRemovePhoto = useCallback(
     (photoId: string) => {
-      Alert.alert('Remove Photo', 'Are you sure you want to remove this photo?', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => dispatch(removePhoto(photoId)),
-        },
-      ]);
+      Alert.alert(
+        'Remove Photo',
+        'Are you sure you want to remove this photo?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Remove',
+            style: 'destructive',
+            onPress: () => dispatch(removePhoto(photoId)),
+          },
+        ],
+      );
     },
     [dispatch],
   );
@@ -62,11 +119,26 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
     onNext();
   }, [photos.length, dispatch, onNext]);
 
+  // Render a single photo item in the grid
+  const renderPhotoItem = ({ item }: { item: Photo }) => (
+    <View style={styles.gridItem}>
+      <Image source={{ uri: item.uri }} style={styles.thumbnail} />
+      <TouchableOpacity
+        style={styles.removeOverlay}
+        onPress={() => handleRemovePhoto(item.id)}
+        activeOpacity={0.7}
+      >
+        <Trash2 size={20} color={Colors.white} />
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+    >
       <Text style={styles.title}>Photo Evidence</Text>
       <Text style={styles.subtitle}>
         Capture photos of the work performed and site conditions.
@@ -75,14 +147,14 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
       <View style={styles.addSection}>
         <AppButton
           title="Take Photo"
-          onPress={handleAddPhoto}
+          onPress={handleCamera}
           variant="outline"
           icon={<Camera size={18} color={Colors.blue} />}
           style={styles.addBtn}
         />
         <AppButton
           title="From Gallery"
-          onPress={handleAddPhoto}
+          onPress={handleGallery}
           variant="outline"
           icon={<ImagePlus size={18} color={Colors.blue} />}
           style={styles.addBtn}
@@ -93,28 +165,20 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
         {photos.length} photo{photos.length !== 1 ? 's' : ''} added
       </Text>
 
-      <View style={styles.photoGrid}>
-        {photos.map((photo) => (
-          <AppCard
-            key={photo.id}
-            variant="outlined"
-            padding="md"
-            style={styles.photoCard}>
-            <View style={styles.photoPlaceholder}>
-              <Camera size={24} color={Colors.gray300} />
-              <Text style={styles.photoName}>{photo.caption}</Text>
-            </View>
-            <AppButton
-              title=""
-              onPress={() => handleRemovePhoto(photo.id)}
-              variant="ghost"
-              size="sm"
-              icon={<Trash2 size={16} color={Colors.red} />}
-              style={styles.removeBtn}
-            />
-          </AppCard>
-        ))}
-      </View>
+      {photos.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No photos added yet</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={photos}
+          renderItem={renderPhotoItem}
+          keyExtractor={item => item.id}
+          numColumns={4}
+          scrollEnabled={false} // Allow ScrollView to handle scrolling
+          contentContainerStyle={styles.gridContainer}
+        />
+      )}
 
       <View style={styles.actions}>
         <AppButton
@@ -123,11 +187,7 @@ const StepPhotoEvidence: React.FC<StepPhotoEvidenceProps> = ({
           variant="outline"
           style={styles.actionBtn}
         />
-        <AppButton
-          title="Next"
-          onPress={handleNext}
-          style={styles.actionBtn}
-        />
+        <AppButton title="Next" onPress={handleNext} style={styles.actionBtn} />
       </View>
     </ScrollView>
   );
@@ -164,28 +224,37 @@ const styles = StyleSheet.create({
     color: Colors.gray700,
     marginBottom: Spacing.md,
   },
-  photoGrid: {
-    gap: Spacing.md,
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.xl,
+  },
+  emptyText: {
+    ...Typography.body,
+    color: Colors.gray500,
+  },
+  gridContainer: {
     marginBottom: Spacing.xl,
   },
-  photoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  gridItem: {
+    flex: 1 / 4, // 4 columns
+    aspectRatio: 1, // Square thumbnails
+    padding: Spacing.xs,
+    position: 'relative',
   },
-  photoPlaceholder: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    flex: 1,
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.gray100,
   },
-  photoName: {
-    ...Typography.caption,
-    color: Colors.gray700,
-  },
-  removeBtn: {
-    minHeight: 32,
-    paddingHorizontal: Spacing.sm,
+  removeOverlay: {
+    position: 'absolute',
+    top: Spacing.xs,
+    right: Spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 16,
+    padding: 6,
   },
   actions: {
     flexDirection: 'row',
