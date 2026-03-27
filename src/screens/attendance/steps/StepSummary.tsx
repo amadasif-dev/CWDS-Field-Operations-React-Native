@@ -1,13 +1,14 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import {
   CheckCircle,
-  MapPin,
   Shield,
-  Wrench,
   FileText,
-  Camera,
+  Clock,
+  MapPin,
+  Package,
   PenTool,
+  Camera,
 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAppDispatch, useAppSelector } from '../../../store';
@@ -28,63 +29,75 @@ interface StepSummaryProps {
 const StepSummary: React.FC<StepSummaryProps> = ({ jobId, onPrev }) => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation();
-  const { stepData, photos, signature, isSubmitting } = useAppSelector(
+  const { stepData, photos, rooms, consumables, signature, isSubmitting } = useAppSelector(
     state => state.attendance,
   );
+
+  const jobDetails = useAppSelector(state => state.jobs.selectedJob);
 
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showErrorAlert, setShowErrorAlert] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const summaryItems = [
+  const summaryItems = useMemo(() => [
     {
-      icon: <MapPin size={18} color={Colors.blue} />,
-      title: 'Job Confirmation',
-      status: stepData[1]?.confirmed ? 'Confirmed' : 'Incomplete',
-      complete: !!stepData[1]?.confirmed,
-    },
-    {
-      icon: <Shield size={18} color={Colors.green} />,
-      title: 'Site Assessment',
-      status: stepData[2]?.siteCondition
-        ? `Condition: ${stepData[2].siteCondition}`
-        : 'Incomplete',
-      complete: !!stepData[2]?.siteCondition,
-    },
-    {
-      icon: <Wrench size={18} color={Colors.gold} />,
-      title: 'Equipment Check',
-      status: stepData[3]?.equipmentVerified ? 'Verified' : 'Incomplete',
-      complete: !!stepData[3]?.equipmentVerified,
-    },
-    {
-      icon: <Shield size={18} color={Colors.green} />,
-      title: 'Safety Checklist',
-      status: stepData[4]?.safetyCompleted ? 'Completed' : 'Incomplete',
-      complete: !!stepData[4]?.safetyCompleted,
+      icon: <Shield size={18} color={Colors.navy} />,
+      title: 'OH&S Declaration',
+      status: stepData[1]?.allChecked ? 'All items acknowledged' : 'Incomplete',
+      complete: !!stepData[1]?.allChecked,
     },
     {
       icon: <FileText size={18} color={Colors.blue} />,
-      title: 'Work Documentation',
-      status: stepData[5]?.workDescription ? 'Documented' : 'Incomplete',
-      complete: !!stepData[5]?.workDescription,
+      title: 'JSA Review',
+      status: stepData[2]?.technicianSignature ? 'Reviewed & signed' : 'Incomplete',
+      complete: !!stepData[2]?.technicianSignature,
     },
     {
-      icon: <Camera size={18} color={Colors.accent} />,
-      title: 'Photo Evidence',
-      status: `${photos.length} photo${
-        photos.length !== 1 ? 's' : ''
-      } captured`,
-      complete: photos.length > 0,
+      icon: <Clock size={18} color={Colors.green} />,
+      title: 'Arrival Check-in',
+      status: stepData[3]?.confirmed
+        ? `Arrived: ${stepData[3]?.arrivalTime
+            ? new Date(stepData[3].arrivalTime as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : ''}`
+        : 'Not confirmed',
+      complete: !!stepData[3]?.confirmed,
+    },
+    {
+      icon: <MapPin size={18} color={Colors.gold} />,
+      title: 'Room Inspection',
+      status: rooms.length > 0
+        ? `${rooms.filter(r => r.status === 'complete').length} of ${rooms.length} rooms complete`
+        : 'No rooms inspected',
+      complete: rooms.length > 0 && rooms.every(r => r.status === 'complete'),
+    },
+    {
+      icon: <Package size={18} color={Colors.accent} />,
+      title: 'Consumables',
+      status: Object.keys(consumables).length > 0
+        ? `${Object.values(consumables).reduce((a, b) => a + b, 0)} items logged`
+        : 'None logged',
+      complete: true, // Optional step
     },
     {
       icon: <PenTool size={18} color={Colors.navy} />,
-      title: 'Client Signature',
-      status: signature ? 'Signed' : 'Incomplete',
-      complete: !!signature,
+      title: 'Form 2 Signing',
+      status: stepData[6]?.skipped
+        ? 'Not required'
+        : stepData[6]?.clientSignature
+          ? 'Signed'
+          : 'Incomplete',
+      complete: stepData[6]?.skipped || !!stepData[6]?.clientSignature,
     },
-  ];
+    {
+      icon: <Clock size={18} color={Colors.green} />,
+      title: 'Departure Time',
+      status: stepData[7]?.confirmed
+        ? `${stepData[7]?.totalHours || 0} hrs on site`
+        : 'Not confirmed',
+      complete: !!stepData[7]?.confirmed,
+    },
+  ], [stepData, rooms, consumables]);
 
   const allComplete = summaryItems.every(item => item.complete);
 

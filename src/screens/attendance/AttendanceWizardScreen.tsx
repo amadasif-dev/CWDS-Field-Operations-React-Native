@@ -1,3 +1,4 @@
+// AttendanceWizardScreen.tsx - 8-Step Wizard Implementation
 import React, { useEffect, useCallback } from 'react';
 import { View, StyleSheet, Alert, BackHandler } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -12,25 +13,25 @@ import {
 import { Colors, Spacing } from '../../theme';
 import { StepProgressBar, AppLoader } from '../../components';
 import type { RootStackScreenProps } from '../../types/navigation';
-import StepJobConfirmation from './steps/StepJobConfirmation';
-import StepSiteAssessment from './steps/StepSiteAssessment';
-import StepEquipmentCheck from './steps/StepEquipmentCheck';
-import StepSafetyChecklist from './steps/StepSafetyChecklist';
-import StepPhotoEvidence from './steps/StepPhotoEvidence';
-import StepClientSignature from './steps/StepClientSignature';
+import StepOHSDeclaration from './steps/StepOHSDeclaration';
+import StepJSA from './steps/StepJSA';
+import StepArrivalCheckIn from './steps/StepArrivalCheckIn';
+import StepRoomInspection from './steps/StepRoomInspection';
+import StepConsumablesChecklist from './steps/StepConsumablesChecklist';
+import StepForm2Signing from './steps/StepForm2Signing';
+import StepDepartureTime from './steps/StepDepartureTime';
 import StepSummary from './steps/StepSummary';
-import StepWorkDocumentation from './steps/StepWorkDocumentation';
 
 type Props = RootStackScreenProps<'AttendanceWizard'>;
 
 const STEP_LABELS = [
-  'Confirm',
-  'Site',
-  'Equip',
-  'Safety',
-  'Work',
-  'Photos',
-  'Sign',
+  'OH&S',
+  'JSA',
+  'Arrival',
+  'Rooms',
+  'Consumables',
+  'Form 2',
+  'Departure',
   'Submit',
 ];
 
@@ -113,31 +114,19 @@ const AttendanceWizardScreen: React.FC<Props> = ({ route, navigation }) => {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <StepJobConfirmation jobId={jobId} onNext={handleNext} />;
+        return <StepOHSDeclaration jobId={jobId} onNext={handleNext} />;
       case 2:
-        return (
-          <StepSiteAssessment onNext={handleNext} onPrev={handlePrev} />
-        );
+        return <StepJSA onNext={handleNext} onPrev={handlePrev} />;
       case 3:
-        return (
-          <StepEquipmentCheck onNext={handleNext} onPrev={handlePrev} />
-        );
+        return <StepArrivalCheckIn onNext={handleNext} onPrev={handlePrev} />;
       case 4:
-        return (
-          <StepSafetyChecklist onNext={handleNext} onPrev={handlePrev} />
-        );
+        return <StepRoomInspection onNext={handleNext} onPrev={handlePrev} />;
       case 5:
-        return (
-          <StepWorkDocumentation onNext={handleNext} onPrev={handlePrev} />
-        );
+        return <StepConsumablesChecklist onNext={handleNext} onPrev={handlePrev} />;
       case 6:
-        return (
-          <StepPhotoEvidence onNext={handleNext} onPrev={handlePrev} />
-        );
+        return <StepForm2Signing onNext={handleNext} onPrev={handlePrev} />;
       case 7:
-        return (
-          <StepClientSignature onNext={handleNext} onPrev={handlePrev} />
-        );
+        return <StepDepartureTime onNext={handleNext} onPrev={handlePrev} />;
       case 8:
         return <StepSummary jobId={jobId} onPrev={handlePrev} />;
       default:

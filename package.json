@@ -5,9 +5,15 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "lint": "eslint .",
+    "test": "jest",
+    "clean": "rm -rf node_modules android/build ios/build ios/Pods ios/Podfile.lock && npm cache clean --force",
+    "install-all": "npm install && cd ios && pod install && cd ..",
+    "reset-cache": "npx react-native start --reset-cache",
+    "all": "npm run clean && npm run install-all && npm run start & npm run android",
+    "uninstall:android": "adb uninstall com.cwdsfield",
+    "uninstall:ios": "xcrun simctl uninstall booted com.cwdsfield"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",

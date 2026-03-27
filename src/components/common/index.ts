@@ -9,4 +9,5 @@ export { default as StepProgressBar } from './StepProgressBar';
 export { default as SectionHeader } from './SectionHeader';
 export { default as EmptyState } from './EmptyState';
 export { default as BottomSheetAlert } from './BottomSheetAlert';
+export { default as SignatureModal } from './SignatureModal';
 export type { BottomSheetType } from './BottomSheetAlert';

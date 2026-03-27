@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  StyleProp,
 } from 'react-native';
 import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
 
@@ -19,8 +20,8 @@ interface AppButtonProps {
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 }
 
 const AppButton: React.FC<AppButtonProps> = ({

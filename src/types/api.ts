@@ -62,6 +62,8 @@ export interface AttendanceSubmitPayload {
   jobId: string;
   steps: Record<string, unknown>[];
   photos: string[];
+  rooms?: unknown[];
+  consumables?: Record<string, number>;
   signature?: string;
   notes?: string;
   submittedAt: string;

@@ -20,6 +20,7 @@ interface AppInputProps extends Omit<TextInputProps, 'style'> {
   containerStyle?: ViewStyle;
   inputStyle?: ViewStyle;
   required?: boolean;
+  value?: string;
 }
 
 const AppInput: React.FC<AppInputProps> = ({
@@ -32,6 +33,7 @@ const AppInput: React.FC<AppInputProps> = ({
   inputStyle,
   required = false,
   secureTextEntry,
+  value,
   ...rest
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -68,6 +70,7 @@ const AppInput: React.FC<AppInputProps> = ({
           onBlur={handleBlur}
           secureTextEntry={isSecure}
           {...rest}
+          value={value}
         />
         {secureTextEntry && (
           <TouchableOpacity onPress={toggleSecure} style={styles.iconRight}>
