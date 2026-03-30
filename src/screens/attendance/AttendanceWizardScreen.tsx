@@ -1,6 +1,7 @@
 // AttendanceWizardScreen.tsx - 8-Step Wizard Implementation
 import React, { useEffect, useCallback } from 'react';
-import { View, StyleSheet, Alert, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, Alert, BackHandler, TouchableOpacity } from 'react-native';
+import { Save, ArrowLeft } from 'lucide-react-native';
 import { useAppDispatch, useAppSelector } from '../../store';
 import {
   initAttendance,
@@ -10,7 +11,7 @@ import {
   prevStep,
   clearAttendance,
 } from '../../store/slices/attendanceSlice';
-import { Colors, Spacing } from '../../theme';
+import { Colors, Spacing, Typography } from '../../theme';
 import { StepProgressBar, AppLoader } from '../../components';
 import type { RootStackScreenProps } from '../../types/navigation';
 import StepOHSDeclaration from './steps/StepOHSDeclaration';
@@ -41,6 +42,19 @@ const AttendanceWizardScreen: React.FC<Props> = ({ route, navigation }) => {
   const { currentStep, isDraft, isSubmitting } = useAppSelector(
     (state) => state.attendance,
   );
+
+  const handleNext = useCallback(() => {
+    dispatch(nextStep());
+  }, [dispatch]);
+
+  const handlePrev = useCallback(() => {
+    dispatch(prevStep());
+  }, [dispatch]);
+
+  const handleSaveDraft = useCallback(async () => {
+    await dispatch(saveDraftLocal(jobId));
+    Alert.alert('Draft Saved', 'Your progress has been saved.');
+  }, [dispatch, jobId]);
 
   useEffect(() => {
     dispatch(initAttendance(jobId));
@@ -87,25 +101,28 @@ const AttendanceWizardScreen: React.FC<Props> = ({ route, navigation }) => {
     );
 
     navigation.setOptions({
-      headerLeft: () => null,
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => onBackPress()}
+          style={styles.headerBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <ArrowLeft size={22} color={Colors.navy} />
+        </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={handleSaveDraft}
+          style={styles.headerDraftBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Save size={18} color={Colors.blue} />
+          <Text style={styles.headerDraftText}>Save Draft</Text>
+        </TouchableOpacity>
+      ),
       gestureEnabled: false,
     });
 
     return () => subscription.remove();
-  }, [dispatch, navigation, isDraft, jobId]);
-
-  const handleNext = useCallback(() => {
-    dispatch(nextStep());
-  }, [dispatch]);
-
-  const handlePrev = useCallback(() => {
-    dispatch(prevStep());
-  }, [dispatch]);
-
-  const handleSaveDraft = useCallback(async () => {
-    await dispatch(saveDraftLocal(jobId));
-    Alert.alert('Draft Saved', 'Your progress has been saved.');
-  }, [dispatch, jobId]);
+  }, [dispatch, navigation, isDraft, jobId, handleSaveDraft]);
 
   if (isSubmitting) {
     return <AppLoader fullScreen message="Submitting report..." />;
@@ -153,6 +170,19 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  headerBtn: {
+    padding: Spacing.xs,
+  },
+  headerDraftBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    padding: Spacing.xs,
+  },
+  headerDraftText: {
+    ...Typography.captionBold,
+    color: Colors.blue,
   },
 });
 

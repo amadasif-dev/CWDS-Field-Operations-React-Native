@@ -77,14 +77,14 @@ const EquipmentPerRoom: React.FC<EquipmentPerRoomProps> = ({
   const hasEquipment = equipment.some(item => item.quantity > 0 || (item.id === 'other' && otherName));
 
   const handleNext = useCallback(() => {
-    // if (!hasEquipment) {
-    //   setShowValidationAlert(true);
-    //   return;
-    // }
-    // if (!confirmationPhoto) {
-    //   setShowValidationAlert(true);
-    //   return;
-    // }
+    if (!hasEquipment) {
+      setShowValidationAlert(true);
+      return;
+    }
+    if (!confirmationPhoto) {
+      setShowValidationAlert(true);
+      return;
+    }
 
     const equipmentWithOther = equipment.map(item => {
       if (item.id === 'other' && otherName && item.quantity > 0) {

@@ -11,6 +11,31 @@ export interface User {
   refreshToken: string;
 }
 
+export type WaterDamageCause =
+  | 'Burst pipe'
+  | 'Leaking roof'
+  | 'Overflowing bath/shower'
+  | 'Overflowing toilet'
+  | 'Overflowing washing machine'
+  | 'Overflowing dishwasher'
+  | 'Hot water system failure'
+  | 'Storm damage'
+  | 'Flash flooding'
+  | 'Rising damp'
+  | 'Condensation'
+  | 'Fire suppression (sprinklers)'
+  | 'Sewage backup'
+  | 'Air conditioning leak'
+  | 'Refrigerator leak'
+  | 'Aquarium/fish tank'
+  | 'Subfloor moisture'
+  | 'Unknown origin'
+  | 'Other';
+
+export type WaterCategory = 1 | 2 | 3;
+export type WaterClass = 1 | 2 | 3 | 4;
+export type BuildingType = 'Residential' | 'Commercial' | 'Strata';
+
 export interface Job {
   id: string;
   title: string;
@@ -35,6 +60,15 @@ export interface Job {
   siteIntelligence?: SiteIntelligence;
   jsa?: JSA;
   scope?: Scope;
+  waterDamageCause?: WaterDamageCause;
+  waterCategory?: WaterCategory;
+  waterClass?: WaterClass;
+  buildingType?: BuildingType;
+  affectedRooms?: string[];
+  adminNotes?: string;
+  floorPlans?: FloorPlanImage[];
+  referenceDocuments?: ReferenceDocument[];
+  attendanceHistory?: AttendanceHistoryItem[];
 }
 
 export interface JobDetail extends Job {
@@ -43,6 +77,30 @@ export interface JobDetail extends Job {
   scope?: Scope;
   attendanceStarted?: boolean;
   attendanceCompleted?: boolean;
+}
+
+export interface FloorPlanImage {
+  id: string;
+  uri: string;
+  label?: string;
+  unitId?: string;
+}
+
+export interface ReferenceDocument {
+  id: string;
+  name: string;
+  uri: string;
+  type: 'pdf' | 'image' | 'other';
+}
+
+export interface AttendanceHistoryItem {
+  id: string;
+  date: string;
+  technicianName: string;
+  arrivalTime: string;
+  departureTime: string;
+  status: 'Submitted' | 'Draft';
+  totalHours?: number;
 }
 
 export interface SiteIntelligence {
