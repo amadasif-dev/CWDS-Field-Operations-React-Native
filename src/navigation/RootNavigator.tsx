@@ -13,6 +13,7 @@ import RoomInspectionScreen from '../screens/inspection/RoomInspectionScreen';
 import NotificationsScreen from '../screens/main/NotificationsScreen';
 import JobDetailScreen from '../screens/jobs/JobDetailScreen';
 import AttendanceWizardScreen from '../screens/attendance/AttendanceWizardScreen';
+import AttendanceSummaryScreen from '../screens/attendance/AttendanceSummaryScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -65,6 +66,17 @@ const RootNavigator: React.FC = () => {
               headerTintColor: Colors.white,
               headerStyle: { backgroundColor: Colors.navy },
               gestureEnabled: false,
+              headerBackTitle: 'Back',
+            }}
+          />
+          <Stack.Screen
+            name="AttendanceSummary"
+            component={AttendanceSummaryScreen}
+            options={{
+              headerShown: true,
+              title: 'Attendance Summary',
+              headerTintColor: Colors.white,
+              headerStyle: { backgroundColor: Colors.navy },
               headerBackTitle: 'Back',
             }}
           />

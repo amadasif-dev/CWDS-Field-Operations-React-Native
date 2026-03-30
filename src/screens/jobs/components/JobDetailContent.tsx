@@ -350,6 +350,10 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
     </View>
   );
 
+  const handleViewSummary = useCallback((attendanceId: string) => {
+    navigation.navigate('AttendanceSummary', { attendanceId, jobId });
+  }, [navigation, jobId]);
+
   const renderHistoryTab = () => {
     const history = job.attendanceHistory || [];
 
@@ -367,7 +371,10 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
     return (
       <View style={styles.historyTab}>
         {history.map((item: AttendanceHistoryItem) => (
-          <TouchableOpacity key={item.id} activeOpacity={0.7}>
+          <TouchableOpacity
+            key={item.id}
+            activeOpacity={0.7}
+            onPress={() => handleViewSummary(item.id)}>
             <AppCard
               variant="outlined"
               padding="md"

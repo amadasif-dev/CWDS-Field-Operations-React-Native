@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
   JobDetail: { jobId: string };
   AttendanceWizard: { jobId: string; draftId?: string };
+  AttendanceSummary: { attendanceId: string; jobId: string };
   InspectionSetup: { jobId: string };
   RoomInspection: {
     jobId: string;
