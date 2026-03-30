@@ -5,15 +5,15 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
 } from 'react-native';
-import { Package, Minus, Plus, Search, X } from 'lucide-react-native';
+import { Package, Minus, Plus } from 'lucide-react-native';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setStepData, updateConsumable, setConsumables } from '../../../store/slices/attendanceSlice';
 import {
   AppButton,
   AppCard,
   AppInput,
+  AppSearchBar,
   BottomSheetAlert,
 } from '../../../components';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../theme';
@@ -127,22 +127,12 @@ const StepConsumablesChecklist: React.FC<StepConsumablesChecklistProps> = ({
         Log all consumables used during this attendance for billing purposes.
       </Text>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Search size={18} color={Colors.gray500} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search consumables..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholderTextColor={Colors.gray100}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <X size={16} color={Colors.gray500} />
-          </TouchableOpacity>
-        )}
-      </View>
+      <AppSearchBar
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Search consumables..."
+        containerStyle={styles.searchContainer}
+      />
 
       {/* Running Total */}
       <AppCard variant="outlined" padding="md" style={styles.totalCard}>
@@ -171,21 +161,25 @@ const StepConsumablesChecklist: React.FC<StepConsumablesChecklistProps> = ({
                 <Text style={styles.consumableUnit}>Unit: {item.unit}</Text>
               </View>
               <View style={styles.quantityControl}>
-                <TouchableOpacity
-                  style={styles.quantityButton}
+                <AppButton
+                  title=""
+                  icon={<Minus size={16} color={Colors.white} />}
                   onPress={() => updateQuantity(item.id, -1)}
-                >
-                  <Minus size={16} color={Colors.white} />
-                </TouchableOpacity>
+                  variant="primary"
+                  size="sm"
+                  style={styles.quantityBtn}
+                />
                 <Text style={styles.quantity}>
                   {consumables[item.id] || 0}
                 </Text>
-                <TouchableOpacity
-                  style={styles.quantityButton}
+                <AppButton
+                  title=""
+                  icon={<Plus size={16} color={Colors.white} />}
                   onPress={() => updateQuantity(item.id, 1)}
-                >
-                  <Plus size={16} color={Colors.white} />
-                </TouchableOpacity>
+                  variant="primary"
+                  size="sm"
+                  style={styles.quantityBtn}
+                />
               </View>
             </View>
           </AppCard>
@@ -205,26 +199,30 @@ const StepConsumablesChecklist: React.FC<StepConsumablesChecklistProps> = ({
           onChangeText={setOtherName}
         />
         
-        <View style={styles.consumableRow}>
-          <Text style={styles.consumableName}>Quantity</Text>
-          <View style={styles.quantityControl}>
-            <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={() => updateQuantity('other', -1)}
-            >
-              <Minus size={16} color={Colors.white} />
-            </TouchableOpacity>
-            <Text style={styles.quantity}>
-              {consumables.other || 0}
-            </Text>
-            <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={() => updateQuantity('other', 1)}
-            >
-              <Plus size={16} color={Colors.white} />
-            </TouchableOpacity>
+          <View style={styles.consumableRow}>
+            <Text style={styles.consumableName}>Quantity</Text>
+            <View style={styles.quantityControl}>
+              <AppButton
+                title=""
+                icon={<Minus size={16} color={Colors.white} />}
+                onPress={() => updateQuantity('other', -1)}
+                variant="primary"
+                size="sm"
+                style={styles.quantityBtn}
+              />
+              <Text style={styles.quantity}>
+                {consumables.other || 0}
+              </Text>
+              <AppButton
+                title=""
+                icon={<Plus size={16} color={Colors.white} />}
+                onPress={() => updateQuantity('other', 1)}
+                variant="primary"
+                size="sm"
+                style={styles.quantityBtn}
+              />
+            </View>
           </View>
-        </View>
         
         {otherName.trim() && (consumables.other || 0) > 0 && (
           <Text style={styles.otherNote}>
@@ -278,27 +276,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.gray100,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
     marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.gray100,
-  },
-  searchIcon: {
-    marginRight: Spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    ...Typography.body,
-    color: Colors.gray700,
   },
   totalCard: {
     marginBottom: Spacing.lg,
-    backgroundColor: Colors.blueLight,
+    backgroundColor: Colors.navy,
   },
   totalRow: {
     flexDirection: 'row',
@@ -307,12 +289,12 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     ...Typography.bodyBold,
-    color: Colors.navy,
+    color: Colors.white,
     flex: 1,
   },
   totalValue: {
     ...Typography.h3,
-    color: Colors.blue,
+    color: Colors.white,
   },
   totalSubtext: {
     ...Typography.caption,
@@ -346,15 +328,14 @@ const styles = StyleSheet.create({
   quantityControl: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: Spacing.sm,
   },
-  quantityButton: {
+  quantityBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.blue,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 0,
   },
   quantity: {
     ...Typography.bodyBold,
