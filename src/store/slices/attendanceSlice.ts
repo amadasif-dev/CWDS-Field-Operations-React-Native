@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jobService } from '../../api';
-import type { AttendanceReport, AttendanceStep, Photo, Signature, Room, Consumables } from '../../types/models';
+import { jobService, attendanceService } from '../../api';
+import type { AttendanceFormResponse } from '../../api/attendanceService';
+import type { AttendanceReport, AttendanceStep, Photo, Signature, Room, RoomInspectionData, Consumables } from '../../types/models';
 
 const ATTENDANCE_STEPS: Omit<AttendanceStep, 'isCompleted' | 'data' | 'validationErrors'>[] = [
   { stepNumber: 1, title: 'OH&S Declaration', description: 'Complete safety declaration and hazard acknowledgment' },
@@ -25,6 +26,8 @@ interface AttendanceState {
   isDraft: boolean;
   isSubmitting: boolean;
   isSavingDraft: boolean;
+  isLoadingForm: boolean;
+  fetchedForm: AttendanceFormResponse | null;
   error: string | null;
   validationErrors: Record<number, string[]>;
 }
@@ -40,6 +43,8 @@ const initialState: AttendanceState = {
   isDraft: false,
   isSubmitting: false,
   isSavingDraft: false,
+  isLoadingForm: false,
+  fetchedForm: null,
   error: null,
   validationErrors: {},
 };
@@ -78,6 +83,62 @@ export const saveDraftLocal = createAsyncThunk(
     };
     await AsyncStorage.setItem(DRAFT_KEY(jobId), JSON.stringify(draft));
     return true;
+  },
+);
+
+/**
+ * Fetch complete attendance form data from API (currently returns dummy data).
+ * Use attendanceId to fetch a specific record, or jobId to fetch latest for a job.
+ */
+export const fetchAttendanceForm = createAsyncThunk(
+  'attendance/fetchForm',
+  async (
+    params: { attendanceId?: string; jobId?: string; date?: string },
+    { rejectWithValue },
+  ) => {
+    try {
+      let response;
+      if (params.attendanceId) {
+        response = await attendanceService.getAttendanceFormComplete(params.attendanceId);
+      } else if (params.jobId) {
+        response = await attendanceService.getAttendanceFormByJob(params.jobId, params.date);
+      } else {
+        return rejectWithValue('Either attendanceId or jobId is required');
+      }
+
+      if (!response.success) {
+        return rejectWithValue('Failed to fetch attendance form');
+      }
+      return response.data;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch form';
+      return rejectWithValue(message);
+    }
+  },
+);
+
+/**
+ * Fetch attendance history for the current technician.
+ */
+export const fetchAttendanceHistory = createAsyncThunk(
+  'attendance/fetchHistory',
+  async (
+    params: { page?: number; limit?: number } = {},
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await attendanceService.getMyAttendanceHistory(
+        params.page ?? 1,
+        params.limit ?? 20,
+      );
+      if (!response.success) {
+        return rejectWithValue('Failed to fetch attendance history');
+      }
+      return response.data;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch history';
+      return rejectWithValue(message);
+    }
   },
 );
 
@@ -261,6 +322,193 @@ const attendanceSlice = createSlice({
       })
       .addCase(submitAttendance.rejected, (state, action) => {
         state.isSubmitting = false;
+        state.error = action.payload as string;
+      })
+      // Fetch attendance form
+      .addCase(fetchAttendanceForm.pending, (state) => {
+        state.isLoadingForm = true;
+        state.error = null;
+      })
+      .addCase(fetchAttendanceForm.fulfilled, (state, action) => {
+        state.isLoadingForm = false;
+        state.fetchedForm = action.payload;
+
+        if (!action.payload?.formData) return;
+        const fd = action.payload.formData;
+
+        // ── Step 1: OH&S Declaration ──
+        if (fd.step1?.status === 'completed' && fd.step1.data) {
+          const d = fd.step1.data as Record<string, unknown>;
+          const checkedLabels = (d.checkedItems as string[]) || [];
+          const CHECKLIST_IDS = [
+            'hazards_identified', 'ppe_appropriate', 'asbestos_aware',
+            'emergency_exits', 'jsa_reviewed', 'fit_to_work',
+          ];
+          const checkedItems: Record<string, boolean> = {};
+          CHECKLIST_IDS.forEach((id, idx) => {
+            checkedItems[id] = idx < checkedLabels.length;
+          });
+          state.stepData[1] = {
+            checkedItems,
+            asbestosAcknowledged: d.asbestosAcknowledged as boolean ?? false,
+            allChecked: d.allChecked as boolean ?? false,
+            completedAt: fd.step1.completedAt ?? new Date().toISOString(),
+          };
+        }
+
+        // ── Step 2: JSA Review ──
+        if (fd.step2?.status === 'completed' && fd.step2.data) {
+          const d = fd.step2.data as Record<string, unknown>;
+          const sig = d.technicianSignature as Record<string, unknown> | undefined;
+          const hazards = ((d.hazardsReviewed as Array<Record<string, unknown>>) || []).map(h => ({
+            description: (h.name as string) || '',
+            risk: (h.riskLevel as string) || 'Medium',
+            control: (h.controlMeasure as string) || '',
+          }));
+          state.stepData[2] = {
+            sopName: d.sopName as string ?? 'Water Extraction — Category 2',
+            hazards,
+            scrolledToBottom: true,
+            technicianSignature: sig ? {
+              base64: sig.base64 as string || sig.url as string || '',
+              timestamp: sig.signedAt as string || new Date().toISOString(),
+              signerName: '',
+              signerRole: 'Technician',
+            } : null,
+            signatureTimestamp: sig?.signedAt as string || null,
+            completedAt: fd.step2.completedAt ?? new Date().toISOString(),
+          };
+          if (state.stepData[2].technicianSignature) {
+            state.signature = state.stepData[2].technicianSignature as Signature;
+          }
+        }
+
+        // ── Step 3: Arrival Check-in ──
+        if (fd.step3?.status === 'completed' && fd.step3.data) {
+          const d = fd.step3.data as Record<string, unknown>;
+          state.stepData[3] = {
+            arrivalTime: d.arrivalTime as string,
+            confirmed: true,
+            siteAccessible: d.siteAccessible as boolean ?? true,
+            hasHazards: d.immediateHazards as boolean ?? false,
+            hazardNotes: d.hazardNotes as string ?? '',
+            clientOnSite: d.clientPresent as boolean ?? false,
+            clientName: d.clientName as string ?? '',
+            completedAt: fd.step3.completedAt ?? new Date().toISOString(),
+          };
+        }
+
+        // ── Step 4: Room Inspection ──
+        if (fd.step4?.status === 'completed' && fd.step4.data) {
+          const d = fd.step4.data as Record<string, unknown>;
+          const apiRooms = (d.rooms as Array<Record<string, unknown>>) || [];
+          const mappedRooms: Room[] = apiRooms.map(r => ({
+            id: r.id as string,
+            name: r.name as string,
+            floor: r.floor as string || 'Ground',
+            status: 'complete' as const,
+            data: {
+              overviewPhotos: r.overviewPhotos as RoomInspectionData['overviewPhotos'],
+              surfaces: r.surfaces as RoomInspectionData['surfaces'],
+              equipment: r.equipment as RoomInspectionData['equipment'],
+              confirmationPhoto: r.confirmationPhoto as RoomInspectionData['confirmationPhoto'],
+              moistureMap: r.moistureMap as RoomInspectionData['moistureMap'],
+              dimensions: r.dimensions as RoomInspectionData['dimensions'],
+            } as RoomInspectionData,
+          }));
+          state.rooms = mappedRooms;
+          state.stepData[4] = {
+            rooms: mappedRooms,
+            allRoomsComplete: true,
+            completedCount: mappedRooms.length,
+          };
+        }
+
+        // ── Step 5: Consumables → writes to stepData[7] per existing component convention ──
+        // NOTE: StepConsumablesChecklist reads from stepData[7] (existing code convention)
+        if (fd.step5?.status === 'completed' && fd.step5.data) {
+          const d = fd.step5.data as Record<string, unknown>;
+          const items = (d.items as Array<Record<string, unknown>>) || [];
+          const consumablesMap: Record<string, number> = {};
+          items.forEach(item => {
+            consumablesMap[item.id as string] = item.quantity as number;
+          });
+          state.consumables = consumablesMap;
+          // Only set if step 7 data not already present (departure also uses stepData[7])
+          if (!state.stepData[7]) {
+            state.stepData[7] = {
+              consumables: consumablesMap,
+              otherName: '',
+              hasConsumables: true,
+            };
+          }
+        }
+
+        // ── Step 6: Form 2 Signing ──
+        if (fd.step6?.status === 'completed' && fd.step6.data) {
+          const d = fd.step6.data as Record<string, unknown>;
+          const client = d.client as Record<string, unknown> | undefined;
+          const techWitness = d.technicianWitness as Record<string, unknown> | undefined;
+          const clientSig = client?.signature as Record<string, unknown> | undefined;
+          const techSig = techWitness?.signature as Record<string, unknown> | undefined;
+          state.stepData[6] = {
+            clientName: client?.name as string ?? '',
+            clientSignature: clientSig ? {
+              base64: clientSig.base64 as string || clientSig.url as string || '',
+              timestamp: clientSig.signedAt as string || new Date().toISOString(),
+              signerName: client?.name as string || '',
+              signerRole: 'Client/Owner',
+            } : null,
+            technicianSignature: techSig ? {
+              base64: techSig.base64 as string || techSig.url as string || '',
+              timestamp: techSig.signedAt as string || new Date().toISOString(),
+              signerName: techWitness?.name as string || '',
+              signerRole: 'Technician',
+            } : null,
+            form2Scrolled: true,
+            isInvasive: d.invasiveWorks as boolean ?? true,
+            skipped: d.skipped as boolean ?? false,
+            signedAt: fd.step6.completedAt ?? new Date().toISOString(),
+          };
+        }
+
+        // ── Step 7: Departure ──
+        if (fd.step7?.status === 'completed' && fd.step7.data) {
+          const d = fd.step7.data as Record<string, unknown>;
+          state.stepData[7] = {
+            ...state.stepData[7],
+            departureTime: d.departureTime as string,
+            confirmed: true,
+            hasIssues: d.issuesOnDeparture as boolean ?? false,
+            issuesNotes: d.issueNotes as string ?? '',
+            siteClean: d.siteClean as boolean ?? true,
+            totalHours: d.totalHours as number ?? 0,
+            arrivalTime: d.arrivalTime as string ?? state.stepData[3]?.arrivalTime,
+          };
+        }
+
+        // ── Step 8: Review & Submit — no local state to pre-populate ──
+
+        // If resuming a draft, set current step to active step from uiConfig
+        if (action.payload.uiConfig?.canResume && action.payload.uiConfig.activeStep) {
+          state.currentStep = action.payload.uiConfig.activeStep;
+          state.isDraft = true;
+        }
+      })
+      .addCase(fetchAttendanceForm.rejected, (state, action) => {
+        state.isLoadingForm = false;
+        state.error = action.payload as string;
+      })
+      // Fetch attendance history
+      .addCase(fetchAttendanceHistory.pending, (state) => {
+        state.isLoadingForm = true;
+        state.error = null;
+      })
+      .addCase(fetchAttendanceHistory.fulfilled, (state) => {
+        state.isLoadingForm = false;
+      })
+      .addCase(fetchAttendanceHistory.rejected, (state, action) => {
+        state.isLoadingForm = false;
         state.error = action.payload as string;
       });
   },

@@ -3682,10 +3682,103 @@ export const jobService = {
 };
 ```
 
-### Redux Thunk for Attendance Submission
+### Attendance Service Layer (Dynamic Form API)
+
+```typescript
+// src/api/attendanceService.ts
+//
+// This service handles all attendance-related API calls.
+// Currently returns DUMMY data for development — flip USE_MOCK to false
+// when the real backend endpoints are ready. No structural changes needed.
+
+import apiClient from './client';
+import type { ApiResponse } from '../types/api';
+
+// USE_MOCK = true  → returns dummy data with simulated delay
+// USE_MOCK = false → calls real backend API
+const USE_MOCK = true;
+
+export const attendanceService = {
+
+  // GET /attendance/{attendanceId}/complete
+  // Returns full 8-step wizard form data for review/resume
+  getAttendanceFormComplete: async (attendanceId: string) => {
+    if (USE_MOCK) { /* returns DUMMY_ATTENDANCE_FORM_COMPLETE */ }
+    const { data } = await apiClient.get(`/attendance/${attendanceId}/complete`);
+    return data;
+  },
+
+  // GET /jobs/{jobId}/attendance/complete?date={date}
+  // Returns latest attendance form for a job (with optional date filter)
+  getAttendanceFormByJob: async (jobId: string, date?: string) => {
+    if (USE_MOCK) { /* returns DUMMY_ATTENDANCE_FORM_COMPLETE with jobId override */ }
+    const { data } = await apiClient.get(`/jobs/${jobId}/attendance/complete`, { params: { date } });
+    return data;
+  },
+
+  // POST /jobs/{jobId}/attendance
+  // Submit completed wizard form
+  submitAttendanceForm: async (jobId: string, payload: Record<string, unknown>) => {
+    if (USE_MOCK) { /* returns { attendanceId, status: 'submitted' } */ }
+    const { data } = await apiClient.post(`/jobs/${jobId}/attendance`, payload);
+    return data;
+  },
+
+  // PUT /jobs/{jobId}/attendance/draft
+  // Save wizard progress as server-side draft
+  saveAttendanceDraft: async (jobId: string, draftPayload: Record<string, unknown>) => {
+    if (USE_MOCK) { /* returns { draftId, savedAt } */ }
+    const { data } = await apiClient.put(`/jobs/${jobId}/attendance/draft`, draftPayload);
+    return data;
+  },
+
+  // GET /technicians/me/attendance?page={page}&limit={limit}
+  // Attendance history list for current technician
+  getMyAttendanceHistory: async (page = 1, limit = 20) => {
+    if (USE_MOCK) { /* returns 5 dummy history items */ }
+    const { data } = await apiClient.get('/technicians/me/attendance', { params: { page, limit } });
+    return data;
+  },
+};
+```
+
+### Redux Thunks — Fetching & Submitting Attendance
 
 ```typescript
 // src/store/slices/attendanceSlice.ts
+
+// ── Fetch complete form data (dummy → real API swap) ──
+export const fetchAttendanceForm = createAsyncThunk(
+  'attendance/fetchForm',
+  async (
+    params: { attendanceId?: string; jobId?: string; date?: string },
+    { rejectWithValue },
+  ) => {
+    let response;
+    if (params.attendanceId) {
+      response = await attendanceService.getAttendanceFormComplete(params.attendanceId);
+    } else if (params.jobId) {
+      response = await attendanceService.getAttendanceFormByJob(params.jobId, params.date);
+    } else {
+      return rejectWithValue('Either attendanceId or jobId is required');
+    }
+    return response.data; // AttendanceFormResponse
+  },
+);
+
+// ── Fetch technician's attendance history ──
+export const fetchAttendanceHistory = createAsyncThunk(
+  'attendance/fetchHistory',
+  async (params: { page?: number; limit?: number } = {}, { rejectWithValue }) => {
+    const response = await attendanceService.getMyAttendanceHistory(
+      params.page ?? 1,
+      params.limit ?? 20,
+    );
+    return response.data; // AttendanceHistoryItem[]
+  },
+);
+
+// ── Submit attendance (existing) ──
 export const submitAttendance = createAsyncThunk(
   'attendance/submit',
   async (jobId: string, { getState, rejectWithValue }) => {
@@ -3704,7 +3797,6 @@ export const submitAttendance = createAsyncThunk(
         submittedAt: new Date().toISOString(),
       });
       
-      // Clear local draft after successful submission
       await AsyncStorage.removeItem(`attendance_draft_${jobId}`);
       return response.data;
     } catch (error: unknown) {
@@ -3714,6 +3806,64 @@ export const submitAttendance = createAsyncThunk(
     }
   },
 );
+```
+
+### Usage in React Components
+
+```typescript
+// In AttendanceWizardScreen.tsx or any screen:
+import { fetchAttendanceForm, fetchAttendanceHistory } from '../../store/slices/attendanceSlice';
+
+// Fetch complete form (by attendance ID — for review/resume)
+dispatch(fetchAttendanceForm({ attendanceId: 'att_20250330_001' }));
+
+// Fetch complete form (by job ID — for initial load)
+dispatch(fetchAttendanceForm({ jobId: 'JOB-20250326-001' }));
+
+// Fetch attendance history
+dispatch(fetchAttendanceHistory({ page: 1, limit: 20 }));
+
+// Access fetched data in component:
+const { fetchedForm, isLoadingForm, stepData, error } = useAppSelector(state => state.attendance);
+
+// fetchedForm contains full AttendanceFormResponse:
+//   - fetchedForm.formData.step1 ... step8  (each step's data)
+//   - fetchedForm.summary                   (hours, rooms, photos, cost)
+//   - fetchedForm.jobContext                 (client, address, water category)
+//   - fetchedForm.photosGallery             (all photos by category)
+//   - fetchedForm.uiConfig                  (editable, viewMode, activeStep)
+//   - fetchedForm.validation                (errors, warnings)
+//
+// stepData is auto-hydrated from fetchedForm so existing step components
+// continue to work without modification.
+```
+
+### Mock Data File Structure
+
+```
+src/api/
+├── attendanceService.ts          ← Service layer (USE_MOCK flag)
+├── mockData/
+│   └── attendanceFormData.ts     ← Dummy responses (complete + draft)
+├── client.ts                     ← Axios instance
+├── jobService.ts                 ← Job endpoints
+├── authService.ts                ← Auth endpoints
+└── index.ts                      ← Barrel exports
+```
+
+### Switching from Dummy to Real API
+
+When the backend is ready, the only change required is in `src/api/attendanceService.ts`:
+
+```typescript
+// Change this line:
+const USE_MOCK = true;
+
+// To:
+const USE_MOCK = false;
+
+// That's it. All API calls will route to the real backend.
+// The mock data file can be kept for testing or removed.
 ```
 
 ---
