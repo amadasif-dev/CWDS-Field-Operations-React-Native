@@ -225,50 +225,34 @@ const StepDepartureTime: React.FC<StepDepartureTimeProps> = ({
         {/* Issues Section */}
         <AppCard variant="outlined" padding="lg" style={styles.issuesCard}>
           <Text style={styles.issuesTitle}>Any issues on departure?</Text>
-          <View style={styles.toggleGroup}>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                hasIssues === true && styles.toggleButtonActive,
-              ]}
+          <View style={[styles.toggleGroup, { flexDirection: 'row' }]}>
+            <AppButton
+              title="Yes"
               onPress={() => setHasIssues(true)}
-            >
-              <AlertCircle
-                size={18}
-                color={hasIssues === true ? Colors.white : Colors.gray700}
-              />
-              <Text
-                style={[
-                  styles.toggleText,
-                  hasIssues === true && styles.toggleTextActive,
-                ]}
-              >
-                Yes
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                hasIssues === false && styles.toggleButtonActive,
-              ]}
+              variant={hasIssues === true ? 'primary' : 'outline'}
+              icon={
+                <AlertCircle
+                  size={18}
+                  color={hasIssues === true ? Colors.white : Colors.gray700}
+                />
+              }
+              style={styles.toggleBtn}
+            />
+            <AppButton
+              title="No"
               onPress={() => {
                 setHasIssues(false);
                 setIssuesNotes('');
               }}
-            >
-              <CheckCircle
-                size={18}
-                color={hasIssues === false ? Colors.white : Colors.gray700}
-              />
-              <Text
-                style={[
-                  styles.toggleText,
-                  hasIssues === false && styles.toggleTextActive,
-                ]}
-              >
-                No
-              </Text>
-            </TouchableOpacity>
+              variant={hasIssues === false ? 'primary' : 'outline'}
+              icon={
+                <CheckCircle
+                  size={18}
+                  color={hasIssues === false ? Colors.white : Colors.gray700}
+                />
+              }
+              style={styles.toggleBtn}
+            />
           </View>
 
           {hasIssues && (
@@ -291,46 +275,30 @@ const StepDepartureTime: React.FC<StepDepartureTimeProps> = ({
             Confirm site left clean and secure?
           </Text>
           <View style={styles.toggleGroup}>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                siteClean === true && styles.toggleButtonActive,
-              ]}
+            <AppButton
+              title="Yes, site is clean and secure"
               onPress={() => setSiteClean(true)}
-            >
-              <CheckCircle
-                size={18}
-                color={siteClean === true ? Colors.white : Colors.gray700}
-              />
-              <Text
-                style={[
-                  styles.toggleText,
-                  siteClean === true && styles.toggleTextActive,
-                ]}
-              >
-                Yes, site is clean and secure
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                siteClean === false && styles.toggleButtonActive,
-              ]}
+              variant={siteClean === true ? 'primary' : 'outline'}
+              icon={
+                <CheckCircle
+                  size={18}
+                  color={siteClean === true ? Colors.white : Colors.gray700}
+                />
+              }
+              style={styles.toggleBtn}
+            />
+            <AppButton
+              title="No, issues remain"
               onPress={() => setSiteClean(false)}
-            >
-              <AlertCircle
-                size={18}
-                color={siteClean === false ? Colors.white : Colors.gray700}
-              />
-              <Text
-                style={[
-                  styles.toggleText,
-                  siteClean === false && styles.toggleTextActive,
-                ]}
-              >
-                No, issues remain
-              </Text>
-            </TouchableOpacity>
+              variant={siteClean === false ? 'primary' : 'outline'}
+              icon={
+                <AlertCircle
+                  size={18}
+                  color={siteClean === false ? Colors.white : Colors.gray700}
+                />
+              }
+              style={styles.toggleBtn}
+            />
           </View>
         </AppCard>
 
@@ -437,16 +405,16 @@ const styles = StyleSheet.create({
   hoursCard: {
     marginBottom: Spacing.lg,
     alignItems: 'center',
-    backgroundColor: Colors.blueLight,
+    backgroundColor: Colors.navy,
   },
   hoursLabel: {
     ...Typography.caption,
-    color: Colors.gray700,
+    color: Colors.white,
     marginBottom: Spacing.sm,
   },
   hoursValue: {
     ...Typography.displayMedium,
-    color: Colors.blue,
+    color: Colors.white,
     marginBottom: Spacing.xs,
   },
   hoursSubtext: { ...Typography.caption, color: Colors.gray500 },
@@ -463,25 +431,8 @@ const styles = StyleSheet.create({
     color: Colors.navy,
     marginBottom: Spacing.md,
   },
-  toggleGroup: { flexDirection: 'row', gap: Spacing.md },
-  toggleButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.gray300,
-    backgroundColor: Colors.white,
-  },
-  toggleButtonActive: {
-    backgroundColor: Colors.blue,
-    borderColor: Colors.blue,
-  },
-  toggleText: { ...Typography.body, color: Colors.gray700 },
-  toggleTextActive: { color: Colors.white },
+  toggleGroup: { gap: Spacing.md },
+  toggleBtn: { flex: 1 },
   actions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.lg },
   actionBtn: { flex: 1 },
 });

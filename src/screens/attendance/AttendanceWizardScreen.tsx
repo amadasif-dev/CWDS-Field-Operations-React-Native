@@ -7,6 +7,7 @@ import {
   initAttendance,
   loadDraft,
   saveDraftLocal,
+  fetchAttendanceForm,
   nextStep,
   prevStep,
   clearAttendance,
@@ -39,7 +40,7 @@ const STEP_LABELS = [
 const AttendanceWizardScreen: React.FC<Props> = ({ route, navigation }) => {
   const { jobId, draftId } = route.params;
   const dispatch = useAppDispatch();
-  const { currentStep, isDraft, isSubmitting } = useAppSelector(
+  const { currentStep, isDraft, isSubmitting, isLoadingForm } = useAppSelector(
     (state) => state.attendance,
   );
 
@@ -60,6 +61,8 @@ const AttendanceWizardScreen: React.FC<Props> = ({ route, navigation }) => {
     dispatch(initAttendance(jobId));
     if (draftId) {
       dispatch(loadDraft(jobId));
+    } else {
+      dispatch(fetchAttendanceForm({ jobId }));
     }
   }, [dispatch, jobId, draftId]);
 
@@ -123,6 +126,10 @@ const AttendanceWizardScreen: React.FC<Props> = ({ route, navigation }) => {
 
     return () => subscription.remove();
   }, [dispatch, navigation, isDraft, jobId, handleSaveDraft]);
+
+  if (isLoadingForm) {
+    return <AppLoader fullScreen message="Loading attendance form..." />;
+  }
 
   if (isSubmitting) {
     return <AppLoader fullScreen message="Submitting report..." />;
