@@ -1,5 +1,6 @@
 export { default as AppButton } from './AppButton';
 export { default as AppInput } from './AppInput';
+export { default as AppSearchBar } from './AppSearchBar';
 export { default as AppCard } from './AppCard';
 export { default as AppLoader } from './AppLoader';
 export { default as AppModal } from './AppModal';
