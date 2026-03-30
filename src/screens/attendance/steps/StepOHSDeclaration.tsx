@@ -15,6 +15,7 @@ import {
   AppButton,
   AppCard,
   AppCheckbox,
+  AppProgressBar,
   BottomSheetAlert,
 } from '../../../components';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../theme';
@@ -25,24 +26,39 @@ interface StepOHSDeclarationProps {
 }
 
 const CHECKLIST_ITEMS = [
-  { id: 'hazards_identified', label: 'I have inspected the site and identified all hazards' },
+  {
+    id: 'hazards_identified',
+    label: 'I have inspected the site and identified all hazards',
+  },
   { id: 'ppe_appropriate', label: 'I have appropriate PPE for this job' },
   { id: 'asbestos_aware', label: 'I am aware of asbestos risk (if flagged)' },
-  { id: 'emergency_exits', label: 'Emergency exits and first aid locations are known' },
-  { id: 'jsa_reviewed', label: 'I have reviewed the site-specific JSA for this attendance' },
-  { id: 'fit_to_work', label: 'I am fit to work (not impaired, no medical restrictions today)' },
+  {
+    id: 'emergency_exits',
+    label: 'Emergency exits and first aid locations are known',
+  },
+  {
+    id: 'jsa_reviewed',
+    label: 'I have reviewed the site-specific JSA for this attendance',
+  },
+  {
+    id: 'fit_to_work',
+    label: 'I am fit to work (not impaired, no medical restrictions today)',
+  },
 ];
 
-const StepOHSDeclaration: React.FC<StepOHSDeclarationProps> = ({ jobId, onNext }) => {
+const StepOHSDeclaration: React.FC<StepOHSDeclarationProps> = ({
+  jobId,
+  onNext,
+}) => {
   const dispatch = useAppDispatch();
   const stepData = useAppSelector(state => state.attendance.stepData[1]);
   const jobDetails = useAppSelector(state => state.jobs.selectedJob);
 
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(
-    (stepData?.checkedItems as Record<string, boolean>) || {}
+    (stepData?.checkedItems as Record<string, boolean>) || {},
   );
   const [asbestosAcknowledged, setAsbestosAcknowledged] = useState(
-    stepData?.asbestosAcknowledged || false
+    stepData?.asbestosAcknowledged || false,
   );
   const [showAsbestosModal, setShowAsbestosModal] = useState(false);
   const [showValidationAlert, setShowValidationAlert] = useState(false);
@@ -53,10 +69,11 @@ const StepOHSDeclaration: React.FC<StepOHSDeclarationProps> = ({ jobId, onNext }
     const hasAsbestosRisk =
       siteIntel?.asbestosRisk ||
       (siteIntel?.constructionYear && siteIntel.constructionYear < 1990) ||
-      siteIntel?.materials?.some((m: string) =>
-        m.toLowerCase().includes('fibrous') ||
-        m.toLowerCase().includes('cement') ||
-        m.toLowerCase().includes('acms')
+      siteIntel?.materials?.some(
+        (m: string) =>
+          m.toLowerCase().includes('fibrous') ||
+          m.toLowerCase().includes('cement') ||
+          m.toLowerCase().includes('acms'),
       );
 
     if (hasAsbestosRisk && !asbestosAcknowledged) {
@@ -93,7 +110,7 @@ const StepOHSDeclaration: React.FC<StepOHSDeclarationProps> = ({ jobId, onNext }
           allChecked: true,
           completedAt: new Date().toISOString(),
         },
-      })
+      }),
     );
     onNext();
   }, [allChecked, checkedItems, asbestosAcknowledged, dispatch, onNext]);
@@ -106,7 +123,7 @@ const StepOHSDeclaration: React.FC<StepOHSDeclarationProps> = ({ jobId, onNext }
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Shield size={32} color={Colors.navy} />
+          <Shield size={32} color={Colors.gold} />
           <Text style={styles.title}>OH&S Pre-Work Declaration</Text>
           <Text style={styles.subtitle}>
             You must read and acknowledge all items before beginning work.
@@ -114,7 +131,10 @@ const StepOHSDeclaration: React.FC<StepOHSDeclarationProps> = ({ jobId, onNext }
         </View>
 
         <AppCard variant="elevated" padding="lg" style={styles.card}>
-          <Text style={styles.checklistTitle}>Safety Checklist</Text>
+          <View style={styles.checklistHeader}>
+            <Shield size={20} color={Colors.gold} />
+            <Text style={styles.checklistTitle}>Safety Checklist</Text>
+          </View>
           <Text style={styles.checklistSubtitle}>
             All items are required to proceed
           </Text>
@@ -131,22 +151,13 @@ const StepOHSDeclaration: React.FC<StepOHSDeclarationProps> = ({ jobId, onNext }
           </View>
         </AppCard>
 
-        <View style={styles.progress}>
-          <Text style={styles.progressText}>
-            {Object.values(checkedItems).filter(Boolean).length} of {CHECKLIST_ITEMS.length} completed
-          </Text>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${(Object.values(checkedItems).filter(Boolean).length / CHECKLIST_ITEMS.length) * 100}%`,
-                  backgroundColor: allChecked ? Colors.green : Colors.blue,
-                },
-              ]}
-            />
-          </View>
-        </View>
+        <AppProgressBar
+          current={Object.values(checkedItems).filter(Boolean).length}
+          total={CHECKLIST_ITEMS.length}
+          backgroundColor="rgba(255,255,255,0.2)"
+          fillColor={Colors.blue}
+          completeColor={Colors.green}
+        />
 
         <AppButton
           title="Next"
@@ -158,7 +169,6 @@ const StepOHSDeclaration: React.FC<StepOHSDeclarationProps> = ({ jobId, onNext }
         />
       </ScrollView>
 
-      {/* Asbestos Warning Modal */}
       <Modal
         visible={showAsbestosModal}
         transparent
@@ -174,7 +184,8 @@ const StepOHSDeclaration: React.FC<StepOHSDeclarationProps> = ({ jobId, onNext }
             <Text style={styles.modalTitle}>ASBESTOS RISK IDENTIFIED</Text>
 
             <Text style={styles.modalText}>
-              This site has indicators of potential asbestos-containing materials.
+              This site has indicators of potential asbestos-containing
+              materials.
             </Text>
 
             <Text style={styles.modalWarning}>
@@ -255,25 +266,6 @@ const styles = StyleSheet.create({
   checkbox: {
     marginBottom: Spacing.sm,
   },
-  progress: {
-    marginBottom: Spacing.xl,
-  },
-  progressText: {
-    ...Typography.caption,
-    color: Colors.gray300,
-    marginBottom: Spacing.sm,
-    textAlign: 'center',
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
   nextButton: {
     marginTop: Spacing.lg,
   },
@@ -342,6 +334,11 @@ const styles = StyleSheet.create({
     ...Typography.bodyBold,
     color: Colors.white,
     textAlign: 'center',
+  },
+  checklistHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
 });
 
