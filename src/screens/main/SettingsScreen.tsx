@@ -33,7 +33,9 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
   <AppCard onPress={onPress} style={styles.row} variant="outlined" padding="lg">
     <View style={styles.rowLeft}>
       {icon}
-      <Text style={[styles.rowLabel, danger && styles.dangerText]}>{label}</Text>
+      <Text style={[styles.rowLabel, danger && styles.dangerText]}>
+        {label}
+      </Text>
     </View>
     {showArrow && <ChevronRight size={18} color={Colors.gray500} />}
   </AppCard>
@@ -56,57 +58,57 @@ const SettingsScreen: React.FC = () => {
   }, [dispatch]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <SectionHeader title="Settings" />
+    // <SafeAreaView style={styles.safe} edges={['top']}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* <SectionHeader title="Settings" /> */}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          <SettingsRow
-            icon={<User size={20} color={Colors.blue} />}
-            label="Profile"
-            onPress={() => navigation.navigate('Profile')}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Account</Text>
+        <SettingsRow
+          icon={<User size={20} color={Colors.blue} />}
+          label="Profile"
+          onPress={() => navigation.navigate('Profile')}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Preferences</Text>
+        <AppCard style={styles.toggleRow} variant="outlined" padding="lg">
+          <AppToggle
+            label="Push Notifications"
+            value={pushEnabled}
+            onValueChange={setPushEnabled}
           />
-        </View>
+        </AppCard>
+      </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
-          <AppCard style={styles.toggleRow} variant="outlined" padding="lg">
-            <AppToggle
-              label="Push Notifications"
-              value={pushEnabled}
-              onValueChange={setPushEnabled}
-            />
-          </AppCard>
-        </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Support</Text>
+        <SettingsRow
+          icon={<HelpCircle size={20} color={Colors.gray700} />}
+          label="Help & FAQ"
+          onPress={() => {}}
+        />
+        <SettingsRow
+          icon={<Shield size={20} color={Colors.gray700} />}
+          label="Privacy Policy"
+          onPress={() => {}}
+        />
+      </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          <SettingsRow
-            icon={<HelpCircle size={20} color={Colors.gray700} />}
-            label="Help & FAQ"
-            onPress={() => {}}
-          />
-          <SettingsRow
-            icon={<Shield size={20} color={Colors.gray700} />}
-            label="Privacy Policy"
-            onPress={() => {}}
-          />
-        </View>
+      <View style={styles.section}>
+        <SettingsRow
+          icon={<LogOut size={20} color={Colors.red} />}
+          label="Logout"
+          onPress={handleLogout}
+          showArrow={false}
+          danger
+        />
+      </View>
 
-        <View style={styles.section}>
-          <SettingsRow
-            icon={<LogOut size={20} color={Colors.red} />}
-            label="Logout"
-            onPress={handleLogout}
-            showArrow={false}
-            danger
-          />
-        </View>
-
-        <Text style={styles.version}>CWDS Field v1.0.0</Text>
-      </ScrollView>
-    </SafeAreaView>
+      <Text style={styles.version}>CWDS Field v1.0.0</Text>
+    </ScrollView>
+    // </SafeAreaView>
   );
 };
 
@@ -121,6 +123,7 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
+    marginTop: Spacing.lg,
     gap: Spacing.sm,
   },
   sectionTitle: {

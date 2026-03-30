@@ -1,6 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Briefcase, CheckCircle, Clock, AlertTriangle } from 'lucide-react-native';
+import {
+  Briefcase,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+} from 'lucide-react-native';
 import { AppCard } from '../../../components';
 import { Colors, Typography, Spacing } from '../../../theme';
 
@@ -13,10 +18,10 @@ interface StatItemProps {
 
 const StatItem: React.FC<StatItemProps> = ({ icon, label, value, color }) => (
   <AppCard style={styles.statCard} variant="elevated" padding="md">
-    <View style={[styles.iconCircle, { backgroundColor: `${color}15` }]}>
+    <View style={[styles.iconCircle]}>
+      <Text style={styles.statValue}>{value}</Text>
       {icon}
     </View>
-    <Text style={styles.statValue}>{value}</Text>
     <Text style={styles.statLabel}>{label}</Text>
   </AppCard>
 );
@@ -59,12 +64,12 @@ const DashboardStats: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     padding: Spacing.lg,
-    marginTop: -Spacing.lg,
+    marginTop: Spacing.lg,
   },
   row: {
     flexDirection: 'row',
     gap: Spacing.md,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   statCard: {
     flex: 1,
@@ -77,6 +82,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
+    flexDirection: 'row',
+    gap: Spacing.md,
   },
   statValue: {
     ...Typography.h2,
@@ -85,7 +92,7 @@ const styles = StyleSheet.create({
   statLabel: {
     ...Typography.caption,
     color: Colors.gray500,
-    marginTop: Spacing.xxs,
+    marginTop: -Spacing.xxs,
   },
 });
 

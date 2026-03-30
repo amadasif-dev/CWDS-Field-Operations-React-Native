@@ -80,10 +80,10 @@ const MainTabNavigator: React.FC = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.navy,
     borderTopColor: Colors.gray100,
     borderTopWidth: 1,
-    paddingTop: 4,
+    // paddingTop: 4,
     height: Platform.OS === 'ios' ? 100 : 64,
   },
   tabLabel: {

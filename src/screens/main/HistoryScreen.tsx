@@ -7,16 +7,16 @@ import { SectionHeader, EmptyState } from '../../components';
 
 const HistoryScreen: React.FC = () => {
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.container}>
-        <SectionHeader title="History" subtitle="Completed attendance reports" />
-        <EmptyState
-          icon={<ClipboardList size={48} color={Colors.gray300} />}
-          title="No History Yet"
-          message="Completed attendance reports will appear here."
-        />
-      </View>
-    </SafeAreaView>
+    // <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.container}>
+      <SectionHeader title="History" subtitle="Completed attendance reports" />
+      <EmptyState
+        icon={<ClipboardList size={48} color={Colors.gray300} />}
+        title="No History Yet"
+        message="Completed attendance reports will appear here."
+      />
+    </View>
+    // </SafeAreaView>
   );
 };
 

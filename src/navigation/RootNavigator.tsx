@@ -97,6 +97,7 @@ const RootNavigator: React.FC = () => {
               title: 'Notifications',
               headerTintColor: Colors.white,
               headerStyle: { backgroundColor: Colors.navy },
+              headerBackTitle: 'Back',
             }}
           />
           <Stack.Screen

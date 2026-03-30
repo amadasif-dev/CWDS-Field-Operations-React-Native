@@ -107,7 +107,7 @@ const JobsScreen: React.FC = () => {
   const keyExtractor = useCallback((item: Job) => item.id, []);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    // <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.container}>
         <SectionHeader title="Jobs" subtitle="All scheduled maintenance jobs" />
         <View style={styles.searchWrapper}>
@@ -139,7 +139,7 @@ const JobsScreen: React.FC = () => {
           }
         />
       </View>
-    </SafeAreaView>
+    // </SafeAreaView>
   );
 };
 
@@ -150,6 +150,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    // marginTop: -Spacing.xxl,
   },
   searchWrapper: {
     paddingHorizontal: Spacing.lg,
