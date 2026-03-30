@@ -269,7 +269,7 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
         variant="primary"
         size="lg"
         fullWidth
-        disabled={!isAttendanceEnabled}
+        // disabled={!isAttendanceEnabled}
         style={styles.startButton}
       />
       {!isAttendanceEnabled && (
@@ -617,14 +617,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   roomTag: {
-    backgroundColor: Colors.blueLight,
+    backgroundColor: Colors.accent,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
   },
   roomTagText: {
     ...Typography.captionBold,
-    color: Colors.blue,
+    color: Colors.white,
   },
   notesCard: {
     marginTop: Spacing.sm,
