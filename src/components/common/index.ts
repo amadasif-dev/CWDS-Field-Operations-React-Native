@@ -11,3 +11,4 @@ export { default as EmptyState } from './EmptyState';
 export { default as BottomSheetAlert } from './BottomSheetAlert';
 export { default as SignatureModal } from './SignatureModal';
 export { default as AppProgressBar } from './AppProgressBar';
+export { default as AddRoomModal } from './AddRoomModal';

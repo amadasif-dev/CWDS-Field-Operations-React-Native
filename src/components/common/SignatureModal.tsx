@@ -7,11 +7,13 @@ import {
   StyleSheet,
   Alert,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import SignatureScreen from 'react-native-signature-canvas';
 import { X } from 'lucide-react-native';
 import AppButton from './AppButton';
 import { BorderRadius, Colors, Spacing, Typography } from '../../theme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -113,11 +115,11 @@ const SignatureModal = forwardRef<SignatureModalRef, SignatureModalProps>(
       <Modal
         visible={visible}
         animationType="slide"
-        presentationStyle="pageSheet"
         onRequestClose={onClose}
         statusBarTranslucent={true}
       >
-        <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="rgba(0,0,0,0.5)" />
+        <SafeAreaView style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -156,7 +158,7 @@ const SignatureModal = forwardRef<SignatureModalRef, SignatureModalProps>(
               style={styles.actionButton}
             />
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     );
   },

@@ -1,14 +1,14 @@
-// MoistureMapMarkup.tsx
 import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   Dimensions,
+  Image,
 } from 'react-native';
-import { Undo, Eraser, Save, SkipForward } from 'lucide-react-native';
+import SignatureScreen from 'react-native-signature-canvas';
+import { Undo, Eraser } from 'lucide-react-native';
 import { AppButton } from '../../../../components';
 import { BorderRadius, Colors, Spacing, Typography } from '../../../../theme';
 
@@ -36,64 +36,54 @@ const MoistureMapMarkup: React.FC<MoistureMapMarkupProps> = ({
   onNext,
   onPrev,
 }) => {
-  const canvasRef = useRef<any>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [currentColor, setCurrentColor] = useState('#2196F3'); // Blue for water damage
+  const signatureRef = useRef<any>(null);
+  const [currentColor, setCurrentColor] = useState('#2196F3');
   const [brushSize, setBrushSize] = useState<'small' | 'medium' | 'large'>('medium');
-  const [paths, setPaths] = useState<any[]>(data.moistureMap?.paths || []);
   const [savedMap, setSavedMap] = useState<string | null>(data.moistureMap?.savedImage || null);
 
   const baseImage = data.overviewPhotos?.[0]?.uri;
 
-  const handleStartDrawing = useCallback((x: number, y: number) => {
-    setIsDrawing(true);
-    const newPath = {
-      color: currentColor,
-      size: BRUSH_SIZES[brushSize],
-      points: [{ x, y }],
-    };
-    setPaths(prev => [...prev, newPath]);
-  }, [currentColor, brushSize]);
+  const handleColorChange = useCallback((color: string) => {
+    setCurrentColor(color);
+    if (signatureRef.current) {
+      signatureRef.current.changePenColor(color);
+    }
+  }, []);
 
-  const handleDraw = useCallback((x: number, y: number) => {
-    if (!isDrawing) return;
-    setPaths(prev => {
-      const newPaths = [...prev];
-      const lastPath = newPaths[newPaths.length - 1];
-      lastPath.points.push({ x, y });
-      return newPaths;
-    });
-  }, [isDrawing]);
-
-  const handleEndDrawing = useCallback(() => {
-    setIsDrawing(false);
+  const handleBrushSizeChange = useCallback((size: 'small' | 'medium' | 'large') => {
+    setBrushSize(size);
+    if (signatureRef.current) {
+      signatureRef.current.changePenSize(BRUSH_SIZES[size], BRUSH_SIZES[size]);
+    }
   }, []);
 
   const handleUndo = useCallback(() => {
-    setPaths(prev => prev.slice(0, -1));
+    if (signatureRef.current) {
+      signatureRef.current.undo();
+    }
   }, []);
 
   const handleClear = useCallback(() => {
-    setPaths([]);
+    if (signatureRef.current) {
+      signatureRef.current.clearSignature();
+    }
   }, []);
 
-  const handleSave = useCallback(async () => {
-    if (canvasRef.current) {
-      try {
-        const imageData = await canvasRef.current.toDataURL();
-        setSavedMap(imageData);
-        onUpdate({
-          moistureMap: {
-            paths,
-            savedImage: imageData,
-            timestamp: new Date().toISOString(),
-          },
-        });
-      } catch (error) {
-        console.error('Failed to save moisture map:', error);
-      }
+  const handleSave = useCallback((signature: string) => {
+    setSavedMap(signature);
+    onUpdate({
+      moistureMap: {
+        savedImage: signature,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }, [onUpdate]);
+
+  const handleSavePress = useCallback(() => {
+    if (signatureRef.current) {
+      signatureRef.current.readSignature();
     }
-  }, [paths, onUpdate]);
+  }, []);
 
   const handleSkip = useCallback(() => {
     onNext();
@@ -111,13 +101,13 @@ const MoistureMapMarkup: React.FC<MoistureMapMarkupProps> = ({
         <View style={styles.colorTools}>
           <TouchableOpacity
             style={[styles.colorButton, { backgroundColor: '#2196F3', borderWidth: currentColor === '#2196F3' ? 2 : 0 }]}
-            onPress={() => setCurrentColor('#2196F3')}
+            onPress={() => handleColorChange('#2196F3')}
           >
             <View style={styles.colorPreview} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.colorButton, { backgroundColor: '#4CAF50', borderWidth: currentColor === '#4CAF50' ? 2 : 0 }]}
-            onPress={() => setCurrentColor('#4CAF50')}
+            onPress={() => handleColorChange('#4CAF50')}
           >
             <View style={styles.colorPreview} />
           </TouchableOpacity>
@@ -128,7 +118,7 @@ const MoistureMapMarkup: React.FC<MoistureMapMarkupProps> = ({
             <TouchableOpacity
               key={size}
               style={[styles.brushButton, brushSize === size && styles.brushButtonActive]}
-              onPress={() => setBrushSize(size as any)}
+              onPress={() => handleBrushSizeChange(size as any)}
             >
               <View style={[styles.brushPreview, { width: value * 1.5, height: value * 1.5, borderRadius: value / 2 }]} />
             </TouchableOpacity>
@@ -144,25 +134,52 @@ const MoistureMapMarkup: React.FC<MoistureMapMarkupProps> = ({
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Canvas Area */}
       <View style={styles.canvasContainer}>
         {baseImage && (
-          <Image source={{ uri: baseImage }} style={styles.baseImage} />
+          <Image source={{ uri: baseImage }} style={styles.backgroundImage} />
         )}
-        {/* <Canvas
-          ref={canvasRef}
-          style={styles.canvas}
-          onTouchStart={(e) => {
-            const { locationX, locationY } = e.nativeEvent;
-            handleStartDrawing(locationX, locationY);
-          }}
-          onTouchMove={(e) => {
-            const { locationX, locationY } = e.nativeEvent;
-            handleDraw(locationX, locationY);
-          }}
-          onTouchEnd={handleEndDrawing}
-        /> */}
+        <View style={styles.signatureWrapper}>
+          <SignatureScreen
+            ref={signatureRef}
+            onOK={handleSave}
+            descriptionText=""
+            clearText=""
+            confirmText=""
+            webStyle={`
+            body, html {
+              margin: 0;
+              padding: 0;
+              height: 100%;
+              width: 100%;
+              background: transparent;
+            }
+            .m-signature-pad {
+              box-shadow: none;
+              border: none;
+              margin: 0;
+              background: transparent;
+            }
+            .m-signature-pad--body {
+              border: none;
+              background: transparent;
+            }
+            .m-signature-pad--footer {
+              display: none;
+            }
+            canvas {
+              width: 100%;
+              height: 100%;
+              background: transparent;
+            }
+          `}
+          penColor={currentColor}
+          minWidth={BRUSH_SIZES[brushSize]}
+          maxWidth={BRUSH_SIZES[brushSize]}
+          autoClear={false}
+          imageType="image/png"
+          backgroundColor="rgba(0,0,0,0)"
+          />
+        </View>
       </View>
 
       {/* Legend */}
@@ -184,7 +201,7 @@ const MoistureMapMarkup: React.FC<MoistureMapMarkupProps> = ({
         ) : (
           <>
             <AppButton title="Skip" onPress={handleSkip} variant="outline" style={styles.actionBtn} />
-            <AppButton title="Save Map" onPress={handleSave} style={styles.actionBtn} />
+            <AppButton title="Save Map" onPress={handleSavePress} style={styles.actionBtn} />
           </>
         )}
       </View>
@@ -216,9 +233,9 @@ const styles = StyleSheet.create({
   brushPreview: { backgroundColor: Colors.gray700 },
   actionTools: { flexDirection: 'row', gap: Spacing.sm },
   actionButton: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', borderRadius: 18, backgroundColor: Colors.gray100 },
-  canvasContainer: { position: 'relative', width: SCREEN_WIDTH - Spacing.xl * 2, height: SCREEN_WIDTH - Spacing.xl * 2, marginBottom: Spacing.md, borderWidth: 2, borderColor: Colors.gray300, borderRadius: BorderRadius.lg, overflow: 'hidden' },
-  baseImage: { position: 'absolute', width: '100%', height: '100%', resizeMode: 'contain' },
-  canvas: { width: '100%', height: '100%', backgroundColor: 'transparent' },
+  canvasContainer: { position: 'relative', width: SCREEN_WIDTH - Spacing.xl * 2, height: SCREEN_WIDTH - Spacing.xl * 2, marginBottom: Spacing.md, borderWidth: 2, borderColor: Colors.gray300, borderRadius: BorderRadius.lg, overflow: 'hidden', backgroundColor: Colors.white },
+  backgroundImage: { position: 'absolute', width: '100%', height: '100%', resizeMode: 'contain', zIndex: 1 },
+  signatureWrapper: { position: 'absolute', width: '100%', height: '100%', zIndex: 2 },
   legend: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.lg, marginBottom: Spacing.xl },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   legendColor: { width: 16, height: 16, borderRadius: 8 },

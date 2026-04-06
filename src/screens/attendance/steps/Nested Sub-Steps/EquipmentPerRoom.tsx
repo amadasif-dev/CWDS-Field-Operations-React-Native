@@ -1,4 +1,3 @@
-// EquipmentPerRoom.tsx
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -74,13 +73,7 @@ const EquipmentPerRoom: React.FC<EquipmentPerRoomProps> = ({
     }
   }, []);
 
-  const hasEquipment = equipment.some(item => item.quantity > 0 || (item.id === 'other' && otherName));
-
   const handleNext = useCallback(() => {
-    if (!hasEquipment) {
-      setShowValidationAlert(true);
-      return;
-    }
     if (!confirmationPhoto) {
       setShowValidationAlert(true);
       return;
@@ -95,7 +88,7 @@ const EquipmentPerRoom: React.FC<EquipmentPerRoomProps> = ({
 
     onUpdate({ equipment: equipmentWithOther, confirmationPhoto });
     onNext();
-  }, [hasEquipment, confirmationPhoto, equipment, otherName, onUpdate, onNext]);
+  }, [confirmationPhoto, equipment, otherName, onUpdate, onNext]);
 
   return (
     <View style={styles.container}>
@@ -163,13 +156,7 @@ const EquipmentPerRoom: React.FC<EquipmentPerRoomProps> = ({
         visible={showValidationAlert}
         type="warning"
         title="Validation Error"
-        message={
-          !hasEquipment && !confirmationPhoto
-            ? "Please add at least one equipment item and capture a confirmation photo."
-            : !hasEquipment
-              ? "Please add at least one equipment item."
-              : "Please capture an equipment confirmation photo."
-        }
+        message="Please capture an equipment confirmation photo."
         primaryLabel="OK"
         onClose={() => setShowValidationAlert(false)}
       />

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { X, Camera, Ruler, Droplet, Wrench, Map } from 'lucide-react-native';
 import RoomOverviewPhotos from './RoomOverviewPhotos';
@@ -152,8 +153,8 @@ const RoomInspectionWizard: React.FC<RoomInspectionWizardProps> = ({
         onRequestClose={onClose}
         statusBarTranslucent={true}
       >
+        <StatusBar barStyle="dark-content" backgroundColor="rgba(0,0,0,0.5)" />
         <View style={styles.container}>
-          {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={handlePrev} style={styles.headerButton}>
               <X size={24} color={Colors.navy} />
@@ -169,7 +170,6 @@ const RoomInspectionWizard: React.FC<RoomInspectionWizardProps> = ({
             />
           </View>
 
-          {/* Content */}
           <ScrollView
             style={styles.content}
             contentContainerStyle={styles.contentContainer}

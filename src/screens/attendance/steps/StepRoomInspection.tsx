@@ -6,13 +6,11 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Modal,
-  TextInput,
 } from 'react-native';
 import { Plus, CheckCircle, Circle, ArrowRight } from 'lucide-react-native';
 import { useAppDispatch, useAppSelector } from '../../../store';
 import { setStepData, setRooms, updateRoom } from '../../../store/slices/attendanceSlice';
-import { AppButton, AppCard, BottomSheetAlert } from '../../../components';
+import { AppButton, AppCard, BottomSheetAlert, AddRoomModal } from '../../../components';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../theme';
 import RoomInspectionWizard from './Nested Sub-Steps/RoomInspectionWizard';
 import type { Room } from '../../../types/models';
@@ -34,8 +32,6 @@ const StepRoomInspection: React.FC<StepRoomInspectionProps> = ({
   const [rooms, setRoomsState] = useState<Room[]>(savedRooms || []);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [showAddRoomModal, setShowAddRoomModal] = useState(false);
-  const [newRoomName, setNewRoomName] = useState('');
-  const [newRoomFloor, setNewRoomFloor] = useState('');
   const [showValidationAlert, setShowValidationAlert] = useState(false);
 
   // Load rooms from job details on mount
@@ -68,16 +64,11 @@ const StepRoomInspection: React.FC<StepRoomInspectionProps> = ({
     setSelectedRoom(null);
   }, [rooms, dispatch]);
 
-  const handleAddRoom = useCallback(() => {
-    if (!newRoomName.trim()) {
-      setShowValidationAlert(true);
-      return;
-    }
-
+  const handleAddRoom = useCallback((roomName: string, roomFloor: string) => {
     const newRoom: Room = {
       id: `room_${Date.now()}`,
-      name: newRoomName.trim(),
-      floor: newRoomFloor.trim() || 'Ground Floor',
+      name: roomName,
+      floor: roomFloor || 'Ground Floor',
       status: 'pending',
       data: undefined,
     };
@@ -86,9 +77,7 @@ const StepRoomInspection: React.FC<StepRoomInspectionProps> = ({
     setRoomsState(updatedRooms);
     dispatch(setRooms(updatedRooms));
     setShowAddRoomModal(false);
-    setNewRoomName('');
-    setNewRoomFloor('');
-  }, [newRoomName, newRoomFloor, rooms, dispatch]);
+  }, [rooms, dispatch]);
 
   const allRoomsComplete = rooms.length > 0 && rooms.every(room => room.status === 'complete');
   const completedCount = rooms.filter(room => room.status === 'complete').length;
@@ -219,48 +208,11 @@ const StepRoomInspection: React.FC<StepRoomInspectionProps> = ({
         onComplete={handleRoomComplete}
       />
 
-      <Modal
+      <AddRoomModal
         visible={showAddRoomModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowAddRoomModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Additional Room</Text>
-            
-            <Text style={styles.modalLabel}>Room Name *</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="e.g., Master Bedroom"
-              value={newRoomName}
-              onChangeText={setNewRoomName}
-            />
-            
-            <Text style={styles.modalLabel}>Floor</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="e.g., Ground Floor"
-              value={newRoomFloor}
-              onChangeText={setNewRoomFloor}
-            />
-            
-            <View style={styles.modalActions}>
-              <AppButton
-                title="Cancel"
-                onPress={() => setShowAddRoomModal(false)}
-                variant="outline"
-                style={styles.modalActionBtn}
-              />
-              <AppButton
-                title="Add Room"
-                onPress={handleAddRoom}
-                style={styles.modalActionBtn}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowAddRoomModal(false)}
+        onAdd={handleAddRoom}
+      />
 
       <BottomSheetAlert
         visible={showValidationAlert}
@@ -296,32 +248,6 @@ const styles = StyleSheet.create({
   addButton: { marginBottom: Spacing.xl },
   actions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.lg },
   actionBtn: { flex: 1 },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.xl,
-  },
-  modalContent: {
-    backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: { ...Typography.h3, color: Colors.navy, marginBottom: Spacing.lg, textAlign: 'center' },
-  modalLabel: { ...Typography.captionBold, color: Colors.gray700, marginBottom: Spacing.xs },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: Colors.gray300,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-    ...Typography.body,
-  },
-  modalActions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.md },
-  modalActionBtn: { flex: 1 },
 });
 
 export default StepRoomInspection;
