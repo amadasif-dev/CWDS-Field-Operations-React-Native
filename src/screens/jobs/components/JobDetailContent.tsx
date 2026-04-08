@@ -26,11 +26,7 @@ import {
 } from 'lucide-react-native';
 import { AppButton, AppCard } from '../../../components';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../theme';
-import {
-  capitalize,
-  getStatusColor,
-  formatDate,
-} from '../../../utils';
+import { capitalize, getStatusColor, formatDate } from '../../../utils';
 import type { Job, AttendanceHistoryItem } from '../../../types/models';
 
 const MOCK_JOB: Job = {
@@ -198,10 +194,8 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
       <View style={styles.statusRow}>
         <Text style={styles.fieldLabel}>Job Status</Text>
         <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: `${statusColor}15` },
-          ]}>
+          style={[styles.statusBadge, { backgroundColor: `${statusColor}15` }]}
+        >
           <View style={[styles.dot, { backgroundColor: statusColor }]} />
           <Text style={[styles.badgeText, { color: statusColor }]}>
             {capitalize(job.status)}
@@ -224,9 +218,7 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
         </View>
         <View style={styles.halfField}>
           <Text style={styles.fieldLabel}>Water Class</Text>
-          <Text style={styles.fieldValue}>
-            {getClassLabel(job.waterClass)}
-          </Text>
+          <Text style={styles.fieldValue}>{getClassLabel(job.waterClass)}</Text>
         </View>
       </View>
 
@@ -257,9 +249,7 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
               Admin Notes / Special Instructions
             </Text>
           </View>
-          <Text style={styles.notesText}>
-            {job.adminNotes || job.notes}
-          </Text>
+          <Text style={styles.notesText}>{job.adminNotes || job.notes}</Text>
         </AppCard>
       )}
 
@@ -296,12 +286,13 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
             <ImageIcon size={18} color={Colors.navy} />
             <Text style={styles.sectionTitle}>Floor Plans</Text>
           </View>
-          {job.floorPlans.map((plan) => (
+          {job.floorPlans.map(plan => (
             <TouchableOpacity key={plan.id} activeOpacity={0.8}>
               <AppCard
                 variant="outlined"
                 padding="sm"
-                style={styles.floorPlanCard}>
+                style={styles.floorPlanCard}
+              >
                 <Image
                   source={{ uri: plan.uri }}
                   style={styles.floorPlanImage}
@@ -322,7 +313,7 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
             <FileDown size={18} color={Colors.navy} />
             <Text style={styles.sectionTitle}>Reference Documents</Text>
           </View>
-          {job.referenceDocuments.map((doc) => (
+          {job.referenceDocuments.map(doc => (
             <TouchableOpacity
               key={doc.id}
               onPress={() => {
@@ -330,11 +321,9 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
                   Linking.openURL(doc.uri);
                 }
               }}
-              activeOpacity={0.7}>
-              <AppCard
-                variant="outlined"
-                padding="md"
-                style={styles.docCard}>
+              activeOpacity={0.7}
+            >
+              <AppCard variant="outlined" padding="md" style={styles.docCard}>
                 <View style={styles.docRow}>
                   <FileText size={20} color={Colors.blue} />
                   <Text style={styles.docName} numberOfLines={1}>
@@ -350,9 +339,12 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
     </View>
   );
 
-  const handleViewSummary = useCallback((attendanceId: string) => {
-    navigation.navigate('AttendanceSummary', { attendanceId, jobId });
-  }, [navigation, jobId]);
+  const handleViewSummary = useCallback(
+    (attendanceId: string) => {
+      navigation.navigate('AttendanceSummary', { attendanceId, jobId });
+    },
+    [navigation, jobId],
+  );
 
   const renderHistoryTab = () => {
     const history = job.attendanceHistory || [];
@@ -374,15 +366,11 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
           <TouchableOpacity
             key={item.id}
             activeOpacity={0.7}
-            onPress={() => handleViewSummary(item.id)}>
-            <AppCard
-              variant="outlined"
-              padding="md"
-              style={styles.historyCard}>
+            onPress={() => handleViewSummary(item.id)}
+          >
+            <AppCard variant="outlined" padding="md" style={styles.historyCard}>
               <View style={styles.historyHeader}>
-                <Text style={styles.historyDate}>
-                  {formatDate(item.date)}
-                </Text>
+                <Text style={styles.historyDate}>{formatDate(item.date)}</Text>
                 <View
                   style={[
                     styles.historyBadge,
@@ -392,7 +380,8 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
                           ? Colors.greenLight
                           : Colors.orangeLight,
                     },
-                  ]}>
+                  ]}
+                >
                   <Text
                     style={[
                       styles.historyBadgeText,
@@ -402,28 +391,23 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
                             ? Colors.green
                             : Colors.orange,
                       },
-                    ]}>
+                    ]}
+                  >
                     {item.status}
                   </Text>
                 </View>
               </View>
-              <Text style={styles.historyTech}>
-                {item.technicianName}
-              </Text>
+              <Text style={styles.historyTech}>{item.technicianName}</Text>
               <View style={styles.historyTimeRow}>
                 <Text style={styles.historyTime}>
                   {item.arrivalTime} → {item.departureTime}
                 </Text>
                 {item.totalHours !== undefined && (
-                  <Text style={styles.historyHours}>
-                    {item.totalHours} hrs
-                  </Text>
+                  <Text style={styles.historyHours}>{item.totalHours} hrs</Text>
                 )}
               </View>
               <View style={styles.historyViewRow}>
-                <Text style={styles.historyViewText}>
-                  View Summary
-                </Text>
+                <Text style={styles.historyViewText}>View Summary</Text>
                 <ChevronRight size={14} color={Colors.blue} />
               </View>
             </AppCard>
@@ -436,7 +420,9 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
   return (
     <ScrollView
       style={styles.container}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 20 }}
+    >
       <AppCard style={styles.headerCard} variant="elevated" padding="xl">
         <Text style={styles.jobId}>{job.id}</Text>
         <Text style={styles.jobTitle}>{job.title}</Text>
@@ -445,7 +431,8 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
             style={[
               styles.statusBadge,
               { backgroundColor: `${statusColor}15` },
-            ]}>
+            ]}
+          >
             <View style={[styles.dot, { backgroundColor: statusColor }]} />
             <Text style={[styles.badgeText, { color: statusColor }]}>
               {capitalize(job.status)}
@@ -455,7 +442,7 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
       </AppCard>
 
       <View style={styles.tabBar}>
-        {TABS.map((tab) => {
+        {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
           return (
@@ -463,16 +450,10 @@ const JobDetailContent: React.FC<JobDetailContentProps> = ({ jobId }) => {
               key={tab.key}
               style={[styles.tab, isActive && styles.tabActive]}
               onPress={() => setActiveTab(tab.key)}
-              activeOpacity={0.7}>
-              <Icon
-                size={16}
-                color={isActive ? Colors.blue : Colors.gray500}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  isActive && styles.tabTextActive,
-                ]}>
+              activeOpacity={0.7}
+            >
+              <Icon size={16} color={isActive ? Colors.blue : Colors.gray500} />
+              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
                 {tab.label}
               </Text>
             </TouchableOpacity>

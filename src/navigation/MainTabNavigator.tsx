@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Platform } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   LayoutDashboard,
   Briefcase,
@@ -17,6 +18,8 @@ import HistoryScreen from '../screens/main/HistoryScreen';
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const MainTabNavigator: React.FC = () => {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -24,7 +27,14 @@ const MainTabNavigator: React.FC = () => {
         tabBarActiveTintColor: Colors.blue,
         tabBarInactiveTintColor: Colors.gray500,
         tabBarLabelStyle: styles.tabLabel,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          backgroundColor: Colors.navy,
+          borderTopColor: Colors.gray100,
+          borderTopWidth: 1,
+          height: 60 + Math.max(insets.bottom, 8),
+          paddingBottom: Math.max(insets.bottom, 8),
+          paddingTop: 8,
+        },
       }}
     >
       <Tab.Screen
@@ -79,13 +89,6 @@ const MainTabNavigator: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: Colors.navy,
-    borderTopColor: Colors.gray100,
-    borderTopWidth: 1,
-    // paddingTop: 4,
-    height: Platform.OS === 'ios' ? 100 : 64,
-  },
   tabLabel: {
     ...Typography.small,
     fontWeight: '600',
