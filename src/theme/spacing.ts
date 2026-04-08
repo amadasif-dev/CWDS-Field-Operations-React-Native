@@ -7,7 +7,7 @@ export const Spacing = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
-  huge: 48,
+  huge: 55,
 } as const;
 
 export const BorderRadius = {
